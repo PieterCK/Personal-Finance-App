@@ -5,7 +5,9 @@
     <head>
         <title>{% block title %}Auctions{% endblock %}</title>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-        <link href="{% static 'AccountReader/styles.css' %}" rel="stylesheet">
+        <link href="{% static 'styles.css' %}" rel="stylesheet">
+        <script src="{% static 'jquery-3.6.4.js' %}" type="text/javascript"></script>
+        <script src="{% static 'ExpenseTracker.js' %}"></script>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
         <link href="https://getbootstrap.com/docs/5.2/assets/css/docs.css" rel="stylesheet">
         <title>Bootstrap Example</title>
@@ -13,6 +15,9 @@
     </head>
     <body>
         <h1>Layout Component</h1>
+        <div>
+            <button class="test_button">Test Button</button>
+        </div>
         <div>
             {% if user.is_authenticated %}
                 Signed in as <strong>{{ user.username }}</strong>.
