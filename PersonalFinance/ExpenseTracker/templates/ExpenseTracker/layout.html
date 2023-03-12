@@ -2,48 +2,59 @@
 
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <title>{% block title %}Auctions{% endblock %}</title>
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-        <link href="{% static 'styles.css' %}" rel="stylesheet">
-        <script src="{% static 'jquery-3.6.4.js' %}" type="text/javascript"></script>
-        <script src="{% static 'ExpenseTracker.js' %}"></script>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://getbootstrap.com/docs/5.2/assets/css/docs.css" rel="stylesheet">
-        <title>Bootstrap Example</title>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    </head>
-    <body>
-        <h1>Layout Component</h1>
-        <div>
-            <button class="test_button">Test Button</button>
-        </div>
-        <div>
-            {% if user.is_authenticated %}
-                Signed in as <strong>{{ user.username }}</strong>.
-            {% else %}
-                Not signed in.
-            {% endif %}
-        </div>
-        <ul class="nav">
-            {% if user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'index' %}">Index</a>
-                </li>
-            {% else %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'login' %}">Log In</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'register' %}">Register</a>
-                </li>
-            {% endif %}
-        </ul>
-        <hr>
-        {% block body %}
-        {% endblock %}
-    </body>
+
+<head>
+    <title>{% block title %}Kapital{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <link href="{% static 'ExpenseTracker/styles.css' %}" rel="stylesheet">
+    <script src="{% static 'ExpenseTracker/jquery-3.6.4.js' %}" type="text/javascript"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://getbootstrap.com/docs/5.2/assets/css/docs.css" rel="stylesheet">
+    <title>Bootstrap Example</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
+    {% block script %}
+    {% endblock %}
+</head>
+
+<body>
+    <h1>Kapital</h1>
+
+    <div>
+        {% if user.is_authenticated %}
+        Signed in as <strong>{{ user.username }}</strong>.
+        {% else %}
+        Not signed in.
+        {% endif %}
+    </div>
+    <ul class="nav">
+        {% if user.is_authenticated %}
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'logout' %}">Log Out</a>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link nav_button" id="home_view">Home</button>
+        </li>
+        <li>
+            <button class="nav-link nav_button" id="guide_view">Guide</button>
+        </li>
+        <li>
+            <button class="nav-link nav_button" id="bankstatement_view">Load Bank Statement</a>
+        </li>
+        {% else %}
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'login' %}">Log In</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{% url 'register' %}">Register</a>
+        </li>
+        {% endif %}
+    </ul>
+    <hr>
+    {% block body %}
+    {% endblock %}
+    
+</body>
+
 </html>

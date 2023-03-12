@@ -1,5 +1,27 @@
 {% extends "ExpenseTracker/layout.html" %}
+{% load static %}
 
 {% block body %}
-<div>This is Index.html</div>
+<div class="page_view" id="home_view">
+    This is home page
+</div>
+<div class="page_view" id="bankstatement_view">
+    <form id="bankstatement_form">
+        {% csrf_token %}
+        <input type="file">
+        <input type="submit" value="Upload">
+    </form>
+</div>
+<div class="page_view" id="guide_view">
+    This is guide page
+</div>
+<div class="page_view" id="expensetracker_view">
+    This is expense tracker page
+</div>
+
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
+    
 {% endblock %}

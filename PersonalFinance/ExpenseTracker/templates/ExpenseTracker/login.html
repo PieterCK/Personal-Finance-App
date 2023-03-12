@@ -1,5 +1,5 @@
 {% extends "ExpenseTracker/layout.html" %}
-
+{% load static %}
 {% block body %}
 
 <h2>Login</h2>
@@ -21,4 +21,7 @@
 
 Don't have an account? <a href="{% url 'register' %}">Register here.</a>
 
+{% endblock %}
+{% block script %}
+    <script src="{% static 'ExpenseTracker/login.js' %}"></script>
 {% endblock %}

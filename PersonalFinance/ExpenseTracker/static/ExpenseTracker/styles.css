@@ -1,0 +1,8 @@
+div.page_view {
+    display: none;
+}
+
+button.nav_button {
+    border: none;
+    background: transparent;
+}
