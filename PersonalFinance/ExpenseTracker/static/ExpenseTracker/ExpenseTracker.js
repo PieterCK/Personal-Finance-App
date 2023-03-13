@@ -14,7 +14,18 @@ $(function() {
             $(clicked_page).show()
 
             // [TODO] AJAX Call based on page
-
+            if ($(this).attr("id")==="bankstatement_view") {
+                $("#bankstatement_input").change( function(){
+                    var uploaded_file = $(this).prop('files')
+                    if (uploaded_file[0].type !== "application/pdf") {
+                        alert("Please Upload PDF File!")
+                        location.reload()
+                    } else {
+                        $('#pdf_preview').add("embed").attr("src", URL.createObjectURL(uploaded_file[0]) )
+                    }
+                    console.log(URL.createObjectURL(uploaded_file[0]))
+                })
+            }
         });
     })
 

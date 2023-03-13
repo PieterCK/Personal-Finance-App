@@ -6,3 +6,16 @@ button.nav_button {
     border: none;
     background: transparent;
 }
+
+div.pdf_preview {
+    width:200;
+}
+
+div#bankstatement_view {
+    display: flex;
+    width: 100%;
+}
+div#bankstatement_view div{
+    width: 50%;
+    margin: 10px;
+}

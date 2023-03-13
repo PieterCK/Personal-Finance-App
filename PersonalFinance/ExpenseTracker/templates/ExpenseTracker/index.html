@@ -6,11 +6,16 @@
     This is home page
 </div>
 <div class="page_view" id="bankstatement_view">
-    <form id="bankstatement_form">
-        {% csrf_token %}
-        <input type="file">
-        <input type="submit" value="Upload">
-    </form>
+    <div class="embed-responsive embed-responsive-21by9 pdf_preview border  rounded">
+        <embed class="embed-responsive-item" id="pdf_preview"></embed>
+        </div>
+    <div>
+        <form id="bankstatement_form">
+            {% csrf_token %}
+            <input id="bankstatement_input" type="file">
+            <input type="submit" value="Upload">
+        </form>
+    </div>
 </div>
 <div class="page_view" id="guide_view">
     This is guide page
