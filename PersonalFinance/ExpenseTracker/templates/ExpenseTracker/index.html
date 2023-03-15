@@ -10,9 +10,9 @@
         <embed class="embed-responsive-item" id="pdf_preview"></embed>
         </div>
     <div>
-        <form id="bankstatement_form">
+        <form action="{% url 'bankstatement' %}" method="POST" id="bankstatement_form">
             {% csrf_token %}
-            <input id="bankstatement_input" type="file">
+            <input id="bankstatement_input" name="uploaded_file" type="file">
             <input type="submit" value="Upload">
         </form>
     </div>
