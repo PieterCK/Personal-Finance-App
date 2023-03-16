@@ -3,7 +3,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import HttpResponse, HttpResponseRedirect, render
 from django.urls import reverse
+from django.http import JsonResponse
 from .models import User
+import json
 import PyPDF2
 
 # Create your views here.
@@ -61,5 +63,8 @@ def index(request):
 @login_required
 def bankstatement(request):
     if request.method == "POST":
-        print(request.POST["input_file"])
+        print(request.POST["uploaded_file"])
+        reader = PyPDF2.PdfReader(request.POST["uploaded_file"])
+        return HttpResponse(status=204)
+    
     return render(request, "ExpenseTracker/index.html")
