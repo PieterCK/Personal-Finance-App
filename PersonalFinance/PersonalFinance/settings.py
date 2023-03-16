@@ -71,7 +71,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'PersonalFinance.wsgi.application'
 
-
+LOGIN_URL = '/login_view'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

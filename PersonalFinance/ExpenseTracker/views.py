@@ -60,4 +60,6 @@ def index(request):
 
 @login_required
 def bankstatement(request):
+    if request.method == "POST":
+        print(request.POST["input_file"])
     return render(request, "ExpenseTracker/index.html")

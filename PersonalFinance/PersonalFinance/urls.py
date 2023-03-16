@@ -20,9 +20,9 @@ from ExpenseTracker import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name="index"),
-    path('login', views.login_view, name="login"),
-    path('logout', views.logout_view, name="logout"),
-    path('register', views.register_view, name="register"),
+    path('login_view', views.login_view, name="login"),
+    path('logout_view', views.logout_view, name="logout"),
+    path('register_view', views.register_view, name="register"),
 
     path('bankstatement', views.bankstatement, name="bankstatement")
 ]
