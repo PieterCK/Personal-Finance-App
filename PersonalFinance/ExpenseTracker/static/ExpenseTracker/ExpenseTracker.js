@@ -7,6 +7,7 @@ $(function () {
 
     // Navigation Menu
     $("button.nav_button").each(function () {
+        const csrftoken = Cookies.get('csrftoken');
         $(this).click(function () {
             // Show clicked page, hide all other
             other_pages.hide();
@@ -18,17 +19,19 @@ $(function () {
             if ($(this).attr("id") === "bankstatement_view") {
 
                 // feature: preview & check PDF
-                $("#bankstatement_input").change(function () {
-                    var uploaded_file = $(this).prop('files')
-                    if (uploaded_file[0].type !== "application/pdf") {
-                        alert("Please Upload PDF File!")
-                        location.reload()
-                    } else {
-                        $('#pdf_preview').add("embed").attr("src", URL.createObjectURL(uploaded_file[0]))
-                    }
-                })
+                                
+                
                 // [CONTINUE]: Bank Statement feature
             }
         });
+    })
+    $("#bankstatement_form input").change(function () {
+        var uploaded_file = $(this).prop('files')
+        if (uploaded_file[0].type !== "application/pdf") {
+            alert("Please Upload PDF File!")
+            location.reload()
+        } else {
+            $('#pdf_preview').add("embed").attr("src", URL.createObjectURL(uploaded_file[0]))
+        }
     })
 });

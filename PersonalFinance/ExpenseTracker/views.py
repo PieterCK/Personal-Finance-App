@@ -5,8 +5,13 @@ from django.shortcuts import HttpResponse, HttpResponseRedirect, render
 from django.urls import reverse
 from django.http import JsonResponse
 from .models import User
+from .utils import handle_uploaded_file
+from .forms import BankstatementFrom
 import json
 import PyPDF2
+import os
+import urllib
+from io import StringIO
 
 # Create your views here.
 def login_view(request):
@@ -63,8 +68,26 @@ def index(request):
 @login_required
 def bankstatement(request):
     if request.method == "POST":
-        print(request.POST["uploaded_file"])
-        reader = PyPDF2.PdfReader(request.POST["uploaded_file"])
-        return HttpResponse(status=204)
-    
-    return render(request, "ExpenseTracker/index.html")
+
+        CONTEXT={
+            "form": BankstatementFrom()
+            }
+        
+        bankstatement_form = BankstatementFrom(request.POST, request.FILES)
+        if not bankstatement_form.is_valid():
+            CONTEXT["message"] = "Couldn't Load PDF"
+            return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
+        
+        handle_uploaded_file(request.FILES['file'])
+        f = open('ExpenseTracker/static/ExpenseTracker/upload/'+request.FILES['file'].name, "rb")
+        reader = PyPDF2.PdfReader(f)
+        page = reader.pages[3]
+        text = page.extract_text()
+
+        CONTEXT["message"] = text
+        return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
+    else:
+        CONTEXT={
+            "form": BankstatementFrom()
+        }
+        return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)

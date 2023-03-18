@@ -31,6 +31,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'io',
+    'urllib',
     'PyPDF2',
     'ExpenseTracker',
     'django.contrib.admin',

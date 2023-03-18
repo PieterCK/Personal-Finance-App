@@ -1,0 +1,32 @@
+{% extends "ExpenseTracker/layout.html" %}
+{% load static %}
+
+{% block body %}
+<div class="page_view" id="home_view">
+    This is home page
+</div>
+<div id="bankstatement_view">
+    <div class="embed-responsive embed-responsive-21by9 pdf_preview border  rounded">
+        <embed class="embed-responsive-item" id="pdf_preview"></embed>
+        </div>
+    <div>
+        {{message}}
+        <form method="POST" id="bankstatement_form" enctype="multipart/form-data">  
+            {% csrf_token %}  
+            {{ form.as_p }}  
+            <button type="submit" class="save btn btn-default">Save</button>  
+    </form>  
+    </div>
+</div>
+<div class="page_view" id="guide_view">
+    This is guide page
+</div>
+<div class="page_view" id="expensetracker_view">
+    This is expense tracker page
+</div>
+{% endblock %}
+
+{% block script %}
+    <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
+    
+{% endblock %}

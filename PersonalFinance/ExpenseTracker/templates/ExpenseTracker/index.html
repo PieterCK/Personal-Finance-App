@@ -5,18 +5,6 @@
 <div class="page_view" id="home_view">
     This is home page
 </div>
-<div class="page_view" id="bankstatement_view">
-    <div class="embed-responsive embed-responsive-21by9 pdf_preview border  rounded">
-        <embed class="embed-responsive-item" id="pdf_preview"></embed>
-        </div>
-    <div>
-        <form action="{% url 'bankstatement' %}" method="POST" id="bankstatement_form">
-            {% csrf_token %}
-            <input id="bankstatement_input" name="uploaded_file" type="file">
-            <input type="submit" value="Upload">
-        </form>
-    </div>
-</div>
 <div class="page_view" id="guide_view">
     This is guide page
 </div>
