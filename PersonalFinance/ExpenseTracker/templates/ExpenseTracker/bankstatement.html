@@ -10,7 +10,10 @@
         <embed class="embed-responsive-item" id="pdf_preview"></embed>
         </div>
     <div>
-        {{message}}
+        {% for i in message %}
+            {{i}}
+        {% endfor %}
+
         <form method="POST" id="bankstatement_form" enctype="multipart/form-data">  
             {% csrf_token %}  
             {{ form.as_p }}  
