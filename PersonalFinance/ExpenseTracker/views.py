@@ -9,6 +9,7 @@ from .utils import handle_uploaded_file, parse_statement
 from .forms import BankstatementFrom
 import json
 import PyPDF2
+import io
 
 
 # Create your views here.
@@ -76,9 +77,11 @@ def bankstatement(request):
             CONTEXT["message"] = "Couldn't Load PDF"
             return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
         
+        print(request.FILES['file'])
         handle_uploaded_file(request.FILES['file'])
-        f = open('ExpenseTracker/static/ExpenseTracker/upload/'+request.FILES['file'].name, "rb")
-        reader = PyPDF2.PdfReader(f)
+        k = open(request.FILES['file'], "rb")
+
+        reader = PyPDF2.PdfReader(k)
 
         parse_statement('BCA', reader)
 
