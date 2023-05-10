@@ -4,13 +4,14 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import HttpResponse, HttpResponseRedirect, render
 from django.urls import reverse
 from django.http import JsonResponse
-from .models import User
-from .utils import handle_uploaded_file, parse_statement
-from .forms import BankstatementFrom
 import json
 import PyPDF2
 import io
 
+from .models import User
+from .forms import BankstatementFrom
+from .statement_processor import process_bankstatement
+from .utils import highlight_pdf
 
 # Create your views here.
 def login_view(request):
@@ -72,20 +73,35 @@ def bankstatement(request):
             "form": BankstatementFrom()
             }
         
+        # Process form
         bankstatement_form = BankstatementFrom(request.POST, request.FILES)
         if not bankstatement_form.is_valid():
             CONTEXT["message"] = "Couldn't Load PDF"
             return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
         
-        print(request.FILES['file'])
-        handle_uploaded_file(request.FILES['file'])
-        k = open(request.FILES['file'], "rb")
+        # Read uploaded PDF file
+        uploaded_pdf = request.FILES['file']
+        file_buffer = io.BytesIO()
+        for chunk in uploaded_pdf.chunks():
+            file_buffer.write(chunk)
+        file_buffer.seek(0)
+        file_object = io.BufferedReader(file_buffer)
 
-        reader = PyPDF2.PdfReader(k)
+        # Process uploaded PDF file
+        reader = PyPDF2.PdfReader(file_object)
+        transaction_data = process_bankstatement('BCA', reader)
 
-        parse_statement('BCA', reader)
+        # Return result
+        if transaction_data['is_valid']:
+            CONTEXT["message"] = "Succesful! Looks like no imbalance between stated & parsed amount"
+        else:
+            CONTEXT["message"] = "Aww man, Looks like there's imbalance between stated & parsed amount"
+        
+        doc = highlight_pdf(file_buffer, transaction_data)
+        print(type(doc))
+        # CONTEXT["transaction_data"] = transaction_data
+        # request.session["transaction_data"] = transaction_data
 
-        CONTEXT["message"] = "a"
         return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
     else:
         CONTEXT={

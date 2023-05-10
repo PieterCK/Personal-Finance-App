@@ -2,14 +2,28 @@ import re
 from typing import List
 from .models import StatementParser, TransactionRecord
 from decimal import Decimal
+import fitz
 
+# Turn uploaded PDF into list of parsed pages
+def process_raw_pages(pages_read, parse_value):
+    '''
+    param: pages_read: list of PDFPage objects
+    param: parse_value: list of regex patterns to parse data
+    return: list of parsed pages
+    '''
+    parsed_pages = []
+    separators = '|'.join(parse_value)
+    for page in pages_read:
+        raw_parse = re.split('('+separators+')', page.extract_text())
+        parsed_pages.append(clean_raw_parse(raw_parse))
+    return parsed_pages
 
-def handle_uploaded_file(f):  
-    with open('ExpenseTracker/static/ExpenseTracker/upload/'+f.name, 'wb+') as destination:  
-        for chunk in f.chunks():  
-            destination.write(chunk) 
-
+#  Clean raw parsed data
 def clean_raw_parse(data_list):
+    '''
+    param: data_list: list of raw parsed data
+    return: list of data in chunks composed of date, whitespace, info, and detail.['26/03','','TRANSAKSI DEBIT DB', 'SPBU-PERTAMINA 250,000.14 DB']
+    '''
     parsed_list = []
     i = 0
     while i < len(data_list):
@@ -27,157 +41,58 @@ def clean_raw_parse(data_list):
             i += 1
     return parsed_list
 
-def parse_statement(bank_code, reader):
-    # Get delimiter(separator) for corresponding bank
-    parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
-    trash_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "trash_value").values()[0]['pattern'])
+# Clean transaction details
+def clean_transaction_details(transaction_records, trash_value, dirty_transaction_details):
+    '''
+    param: transaction_details: list of transaction details
+    param: trash_value: list of regex patterns of trash data
+    return: Details without trash values, new lines, extra spaces, random numbers. Only words
+    '''
+    for value in transaction_records.values():
+        trash_value.append(value)
+    separators = '|'.join(trash_value)
 
-    # Turn uploaded PDF into list of parsed pages
-    parsed_pages = []
-    def process_raw_pages(pages_read, counter):
-        separators = '|'.join(parse_value)
-        if counter < len(pages_read):
-            page = pages_read[counter]
-            raw_parse = re.split('('+separators+')', page.extract_text())
-            parsed_pages.append(clean_raw_parse(raw_parse))
-
-            # Recursive call to process next page
-            process_raw_pages(pages_read, counter+1)
-
-        return parsed_pages
-
-    # Turn list of parsed pages into list of transaction records(dict)
-    statement_transactions = []
-    recorded_balance = {}
-    tracking_balance = {
-        "mutasi_cr": 0,
-        "mutasi_db": 0
-    }
-    def process_parsed_statements(parsed_pages, counter):
-        if counter < len(parsed_pages):
-            page_n = parsed_pages[counter]
-            transaction_records = {}
-            for i in range(len(page_n)-2):            
-                trf_date = re.search("(\d\d/\d\d)", page_n[i])
-
-                # Identify and organize transaction informations
-                if trf_date and page_n[i+2] in parse_value and page_n[i+1] == ' ':
-                    transaction_records = {
-                        'date': page_n[i],
-                        'info': page_n[i+2]
-                    }
-                    dirty_transaction_details = page_n[i+3]  
-                                    
-                    try: 
-                        entry_type = re.findall("(CR|DB)", transaction_records['info'] + dirty_transaction_details)[0]
-                        if entry_type == 'CR':
-                            transaction_records['entry'] = 'Credit'
-                        elif entry_type == 'DB':
-                            transaction_records['entry'] = 'Debit'
+    tmp = " ".join(re.split(separators, dirty_transaction_details)).strip()
+    tmp = re.sub('\n',' ',tmp)
+    tmp = re.sub(' +',' ',tmp)
                         
-                    except IndexError:
-                        # Special cases
-                        if transaction_records['info'] == 'KR OTOMATIS':
-                            transaction_records['entry'] = 'Credit'
-                        else:
-                            transaction_records['entry'] = '-'
-                    try:
-                        transaction_records['amount'] = [x for x in dirty_transaction_details.split() if re.search("(\d\d[.]\d\d$)", x)][0]
-                    except IndexError:
-                        transaction_records['amount'] = '-'
+    tmp = " ".join(re.findall("[^\d\W]+", tmp))
+    transaction_records['details'] = tmp
+    return transaction_records
 
-                    # Record stated balance changes
-                    if "SALDO AKHIR" in dirty_transaction_details:
-                        tmp_saldo_akhir = re.split('SALDO AKHIR', dirty_transaction_details)[1].split()
-                        recorded_balance['ending_balance'] = [x for x in tmp_saldo_akhir if re.search("(\d\d[.]\d\d$)", x)][0]
-                    if "MUTASI CR" in dirty_transaction_details:
-                        tmp_mutasi_cr = re.split('MUTASI CR', dirty_transaction_details)[1].split()
-                        recorded_balance['mutasi_cr'] = [x for x in tmp_mutasi_cr if re.search("(\d\d[.]\d\d$)", x)][0]
-                    if "MUTASI DB" in dirty_transaction_details:
-                        tmp_mutasi_db = re.split('MUTASI DB', dirty_transaction_details)[1].split()
-                        recorded_balance['mutasi_db'] = [x for x in tmp_mutasi_db if re.search("(\d\d[.]\d\d$)", x)][0]
+# Find numbers and turn to decimal
+def cleanse_number(raw_string):
+    '''
+    param: dirty string of numbers, e.g: "Amount = 2,001,140.28 ;"
+    return: Decimal number "2,001,140.28"
+    '''
+    number_string = re.sub(r'[^\d.]', '',raw_string)
+    number_decimal = Decimal(number_string)
+    return number_decimal
 
-                    # Remove trash values from transaction detail
-                    for value in transaction_records.values():
-                        trash_value.append(value)
-                    separators = '|'.join(trash_value)
+def track_actual_changes(transaction_records, actual_balance):
+    if transaction_records['entry'] == 'Debit':
+        actual_balance['mutasi_db'] += transaction_records['amount']
+    elif transaction_records['entry'] == 'Credit':
+        actual_balance['mutasi_cr'] += transaction_records['amount']
+    return actual_balance
 
-                    tmp = " ".join(re.split(separators, dirty_transaction_details)).strip()
-                    tmp = re.sub('\n',' ',tmp)
-                    tmp = re.sub(' +',' ',tmp)
-                                      
-                    tmp = " ".join(re.findall("[^\d\W]+", tmp))
-                    transaction_records['details'] = tmp
+def highlight_pdf(uploaded_pdf, transaction_details):
+    # Open IoBuffer pdf
+    doc = fitz.Document(stream = uploaded_pdf, filetype = 'pdf')
+    for page in doc:
+        ### SEARCH
+        text = "TRANSAKSI DEBIT"
+        text_instances = page.search_for(text)
 
-                    # Turn transaction amount to decimal
-                    transaction_amount = re.sub(r'[^\d.]', '',transaction_records['amount'])
-                    transaction_records['amount'] = Decimal(transaction_amount)
+        ### HIGHLIGHT
+        for inst in text_instances:
+            highlight = page.add_highlight_annot(inst)
+            highlight.update()
 
-                    # Track actual cashflow
-                    if transaction_records['entry'] == 'Debit':
-                        tracking_balance['mutasi_db'] += transaction_records['amount']
-                    elif transaction_records['entry'] == 'Credit':
-                        tracking_balance['mutasi_cr'] += transaction_records['amount']
-
-                    statement_transactions.append(transaction_records)
-            
-            process_parsed_statements(parsed_pages, counter+1)
-        else:
-            # Turn recorded_balance into decimal
-            for key, value in recorded_balance.items():
-                balance = re.sub(r'[^\d.]', '',value)
-                recorded_balance[key] = Decimal(balance)
-
-            # Difference in recorded and actual mutasi
-            db_difference = recorded_balance['mutasi_db'] - tracking_balance['mutasi_db']
-            cr_difference = recorded_balance['mutasi_cr'] - tracking_balance['mutasi_cr']
-            print(db_difference)
-            print(cr_difference)
-
-            # Calculate average detail length
-            average_detail_length = 0
-            for transaction in statement_transactions:
-                average_detail_length += len(transaction['details'])
-            average_detail_length /= len(statement_transactions)
-            
-            if db_difference + cr_difference != 0:
-                # Flag suspicious transactions
-                suspicious_transactions = []
-                for transaction in statement_transactions:
-                    # Transactions without entry type
-                    if transaction['entry'] != "Credit" and transaction['entry'] != "Debit":
-                        transaction['suspicion'] = 'Cannot identify entry type'
-                        suspicious_transactions.append(transaction)
-                    # Transactions without amount
-                    elif transaction['amount'] == '-':
-                        transaction['suspicion'] = 'Cannot identify amount'
-                        suspicious_transactions.append(transaction)
-                    # Above average transaction details length 
-                    elif len(transaction['details']) > average_detail_length * 2 and transaction['info'] !='SALDO AWAL' and transaction['info'] !='BIAYA ADM':
-                        transaction['suspicion'] = 'Potentially unregistered transaction type'
-                        suspicious_transactions.append(transaction)
-                return suspicious_transactions
-            else:
-                return statement_transactions
-        
-    parsed_output = process_raw_pages(reader.pages, 0)
-    final_transactions = process_parsed_statements(parsed_output, 0)
+    ### OUTPUT
+    doc.save("output.pdf", garbage=4, deflate=True, clean=True)
+    return doc
     
-    # Insert final_transactions into TransactionRecord model
-    # for transaction in final_transactions:
-    #     TransactionRecord.objects.create(
-    #         date = transaction['date'],
-    #         entry = transaction['entry'],
-    #         amount = transaction['amount'],
-    #         details = transaction['details']
-    #     )
-        
-    # Print final_transactions
-
-    # for page in final_transactions:
-    #     print("<->")
-    #     for key, value in page.items():
-    #         print("Transaction "+ key + "= ", value)
-    #     print("<->")
     
 
