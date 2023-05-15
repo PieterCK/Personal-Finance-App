@@ -3,6 +3,7 @@ from typing import List
 from .models import StatementParser, TransactionRecord
 from decimal import Decimal
 import fitz
+import io
 
 # Turn uploaded PDF into list of parsed pages
 def process_raw_pages(pages_read, parse_value):
@@ -77,7 +78,7 @@ def track_actual_changes(transaction_records, actual_balance):
         actual_balance['mutasi_cr'] += transaction_records['amount']
     return actual_balance
 
-def highlight_pdf(uploaded_pdf, transaction_details):
+def highlight_pdf(uploaded_pdf):
     # Open IoBuffer pdf
     doc = fitz.Document(stream = uploaded_pdf, filetype = 'pdf')
     for page in doc:
@@ -91,8 +92,7 @@ def highlight_pdf(uploaded_pdf, transaction_details):
             highlight.update()
 
     ### OUTPUT
-    doc.save("output.pdf", garbage=4, deflate=True, clean=True)
-    return doc
+    output_pdf_bytes = io.BytesIO()
+    doc.save(output_pdf_bytes, garbage=4, deflate=True, clean=True)
+    return output_pdf_bytes
     
-    
-

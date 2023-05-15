@@ -154,8 +154,8 @@ def submit_transactions(bank_code, statement_transactions):
     #         amount = transaction['amount'],
     #         info = transaction['info'],
     #         account_type = 
-    #         bank = 
-    #         details =
+    #         bank =
+    #         details = transaction['details']
     #     )
     pass
     

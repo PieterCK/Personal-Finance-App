@@ -3,11 +3,11 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import HttpResponse, HttpResponseRedirect, render
 from django.urls import reverse
-from django.http import JsonResponse
+from django.http import FileResponse
 import json
 import PyPDF2
 import io
-
+import base64
 from .models import User
 from .forms import BankstatementFrom
 from .statement_processor import process_bankstatement
@@ -68,7 +68,6 @@ def index(request):
 @login_required
 def bankstatement(request):
     if request.method == "POST":
-
         CONTEXT={
             "form": BankstatementFrom()
             }
@@ -85,6 +84,7 @@ def bankstatement(request):
         for chunk in uploaded_pdf.chunks():
             file_buffer.write(chunk)
         file_buffer.seek(0)
+        print(file_buffer.read())
         file_object = io.BufferedReader(file_buffer)
 
         # Process uploaded PDF file
@@ -96,13 +96,31 @@ def bankstatement(request):
             CONTEXT["message"] = "Succesful! Looks like no imbalance between stated & parsed amount"
         else:
             CONTEXT["message"] = "Aww man, Looks like there's imbalance between stated & parsed amount"
+            
+        # TEMPORARY
+        transaction_data['is_valid'] = False
+        output_pdf_bytes = highlight_pdf(file_buffer)
         
-        doc = highlight_pdf(file_buffer, transaction_data)
-        print(type(doc))
-        # CONTEXT["transaction_data"] = transaction_data
+        output_pdf_bytes.seek(0)
+        pdf_data = file_buffer.read()
+        # Create a blob from the PDF data
+        pdf_blob = io.BytesIO(pdf_data)
+
+        # Create a response with the blob URL as a content attachment
+        response = HttpResponse(pdf_blob.read(), content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="output.pdf"'
+
+        # Set the URL of the blob as the response's location header
+        response['Location'] = URL.createObjectURL(pdf_blob)
+
+        base64_pdf= base64.b64encode(pdf_data).decode('utf-8')
+        CONTEXT["highlighted_pdf"] = json.dumps(base64_pdf)
+        CONTEXT["transaction_data"] = transaction_data
+
         # request.session["transaction_data"] = transaction_data
 
-        return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
+        # response = render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
+        return response
     else:
         CONTEXT={
             "form": BankstatementFrom()

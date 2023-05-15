@@ -8,18 +8,21 @@
 <div id="bankstatement_view">
     <div class="embed-responsive embed-responsive-21by9 pdf_preview border  rounded">
         <embed class="embed-responsive-item" id="pdf_preview"></embed>
-        </div>
+        <canvas id="highlighted_pdf_preview"></canvas>    
+    </div>
     <div>
-        {% for i in message %}
-            {{i}}
-        {% endfor %}
-
+        {{message}}
         <form method="POST" id="bankstatement_form" enctype="multipart/form-data">  
             {% csrf_token %}  
             {{ form.as_p }}  
             <button type="submit" class="save btn btn-default">Save</button>  
     </form>  
     </div>
+    {% if not transaction_data.is_valid %}
+    <div>
+        <button type="button" class="btn btn-primary" id ="display_highlighted_pdf">Begin Diagnostics</button>
+    </div>
+    {% endif %}
 </div>
 <div class="page_view" id="guide_view">
     This is guide page
@@ -30,6 +33,8 @@
 {% endblock %}
 
 {% block script %}
+    {{ highlighted_pdf|json_script:"highlighted_pdf" }}
     <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
-    
+    <script src="{% static 'ExpenseTracker/pdfjs/build/pdf.js' %}"></script>
+    <script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
 {% endblock %}
