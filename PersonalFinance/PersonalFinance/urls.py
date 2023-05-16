@@ -24,5 +24,6 @@ urlpatterns = [
     path('logout_view', views.logout_view, name="logout"),
     path('register_view', views.register_view, name="register"),
 
-    path('bankstatement', views.bankstatement, name="bankstatement")
+    path('bankstatement', views.bankstatement, name="bankstatement"),
+    path('bankstatement/highlighted_pdf', views.highlighted_pdf, name="highlighted_pdf"),
 ]

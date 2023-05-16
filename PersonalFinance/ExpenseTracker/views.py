@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import HttpResponse, HttpResponseRedirect, render
 from django.urls import reverse
 from django.http import FileResponse
+from django.core.cache import cache
 import json
 import PyPDF2
 import io
@@ -90,39 +91,30 @@ def bankstatement(request):
         # Process uploaded PDF file
         reader = PyPDF2.PdfReader(file_object)
         transaction_data = process_bankstatement('BCA', reader)
-
+        transaction_data['is_valid'] = False
         # Return result
         if transaction_data['is_valid']:
             CONTEXT["message"] = "Succesful! Looks like no imbalance between stated & parsed amount"
         else:
             CONTEXT["message"] = "Aww man, Looks like there's imbalance between stated & parsed amount"
-            
-        # TEMPORARY
-        transaction_data['is_valid'] = False
-        output_pdf_bytes = highlight_pdf(file_buffer)
-        
-        output_pdf_bytes.seek(0)
-        pdf_data = file_buffer.read()
-        # Create a blob from the PDF data
-        pdf_blob = io.BytesIO(pdf_data)
+            output_pdf_bytes = highlight_pdf(file_buffer)
+            print(output_pdf_bytes)
+            cache.set('output_pdf_bytes', output_pdf_bytes, timeout=300)
 
-        # Create a response with the blob URL as a content attachment
-        response = HttpResponse(pdf_blob.read(), content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="output.pdf"'
-
-        # Set the URL of the blob as the response's location header
-        response['Location'] = URL.createObjectURL(pdf_blob)
-
-        base64_pdf= base64.b64encode(pdf_data).decode('utf-8')
-        CONTEXT["highlighted_pdf"] = json.dumps(base64_pdf)
         CONTEXT["transaction_data"] = transaction_data
 
-        # request.session["transaction_data"] = transaction_data
-
-        # response = render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
+        response = render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
         return response
     else:
         CONTEXT={
             "form": BankstatementFrom()
         }
         return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
+
+@login_required
+def highlighted_pdf(request):
+    output_pdf_bytes = cache.get('output_pdf_bytes')
+    print(output_pdf_bytes)
+    output_pdf_bytes.seek(0) 
+    response = FileResponse(output_pdf_bytes,  as_attachment=False, filename='highlighted_pdf.pdf')
+    return response

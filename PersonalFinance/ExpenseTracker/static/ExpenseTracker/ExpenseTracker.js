@@ -1,5 +1,6 @@
 function display_pdf(file){
     $('#pdf_preview').add("embed").attr("src", URL.createObjectURL(file))
+    console.log(URL.createObjectURL(file))
 }
 
 $(function () {
@@ -40,7 +41,8 @@ $(function () {
     })
 
     $("#display_highlighted_pdf").click(function () {
-
+        var url = window.location.href + "/highlighted_pdf"
+        $('#pdf_preview').add("embed").attr("src", url)
         
 
         // // Render PDF using PDF.js
