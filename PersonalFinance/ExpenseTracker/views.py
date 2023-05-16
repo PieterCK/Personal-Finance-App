@@ -38,19 +38,37 @@ def logout_view(request):
 
 def register_view(request):
     if request.method == "POST":
+        CONTEXT = {}
+        valid_register_info = True
+
+        # Ensure username & email are unique
+        username = request.POST["username"]
         email = request.POST["email"]
+
+        all_usernames = User.objects.values_list('username', flat=True)
+        all_emails = User.objects.values_list('email', flat=True)
+
+        if username in all_usernames:
+            CONTEXT['message'] = "Username already taken."
+            valid_register_info = False
+        if email in all_emails:
+            CONTEXT['message'] = "Email already taken."
+            valid_register_info = False
 
         # Ensure password matches confirmation
         password = request.POST["password"]
         confirmation = request.POST["confirmation"]
         if password != confirmation:
-            return render(request, "ExpenseTracker/register.html", {
-                "message": "Passwords must match."
-            })
+            CONTEXT['message'] = "Passwords must match."
+            valid_register_info = False
+
+        # Returns error message if register infos aren't valid            
+        if not valid_register_info:
+            return render(request, "ExpenseTracker/register.html", CONTEXT)
 
         # Attempt to create new user
         try:
-            user = User.objects.create_user(email, email, password)
+            user = User.objects.create_user(username, email, password)
             user.save()
         except IntegrityError as e:
             print(e)
@@ -114,7 +132,6 @@ def bankstatement(request):
 @login_required
 def highlighted_pdf(request):
     output_pdf_bytes = cache.get('output_pdf_bytes')
-    print(output_pdf_bytes)
     output_pdf_bytes.seek(0) 
     response = FileResponse(output_pdf_bytes,  as_attachment=False, filename='highlighted_pdf.pdf')
     return response

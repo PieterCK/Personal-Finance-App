@@ -11,6 +11,9 @@
 <form action="{% url 'register' %}" method="post">
     {% csrf_token %}
     <div class="form-group">
+        <input class="form-control" type="username" name="username" placeholder="Username">
+    </div>
+    <div class="form-group">
         <input class="form-control" type="email" name="email" placeholder="Email Address">
     </div>
     <div class="form-group">

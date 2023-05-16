@@ -61,7 +61,7 @@ def clean_transaction_details(transaction_records, trash_value, dirty_transactio
     transaction_records['details'] = tmp
     return transaction_records
 
-# Find numbers and turn to decimal
+# Find stringy numbers and turn it to decimal
 def cleanse_number(raw_string):
     '''
     param: dirty string of numbers, e.g: "Amount = 2,001,140.28 ;"
@@ -70,6 +70,7 @@ def cleanse_number(raw_string):
     number_string = re.sub(r'[^\d.]', '',raw_string)
     number_decimal = Decimal(number_string)
     return number_decimal
+
 
 def track_actual_changes(transaction_records, actual_balance):
     if transaction_records['entry'] == 'Debit':
@@ -81,10 +82,13 @@ def track_actual_changes(transaction_records, actual_balance):
 def highlight_pdf(uploaded_pdf):
     # Open IoBuffer pdf
     doc = fitz.Document(stream = uploaded_pdf, filetype = 'pdf')
+    parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
+
     for page in doc:
         ### SEARCH
-        text = "TRANSAKSI DEBIT"
-        text_instances = page.search_for(text)
+        text_instances = None
+        for value in parse_value:
+            text_instances = page.search_for(value)
 
         ### HIGHLIGHT
         for inst in text_instances:
