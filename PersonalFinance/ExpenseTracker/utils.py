@@ -24,7 +24,7 @@ def clean_raw_parse(data_list):
     '''
     param: data_list: list of raw parsed data
     return: list of data in chunks composed of date, whitespace, info, and detail.['26/03','','TRANSAKSI DEBIT DB', 'SPBU-PERTAMINA 250,000.14 DB']
-    '''
+    ''' 
     parsed_list = []
     i = 0
     while i < len(data_list):
@@ -70,7 +70,6 @@ def cleanse_number(raw_string):
     number_string = re.sub(r'[^\d.]', '',raw_string)
     number_decimal = Decimal(number_string)
     return number_decimal
-
 
 def track_actual_changes(transaction_records, actual_balance):
     if transaction_records['entry'] == 'Debit':

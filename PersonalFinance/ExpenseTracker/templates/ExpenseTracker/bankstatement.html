@@ -1,7 +1,9 @@
 {% extends "ExpenseTracker/layout.html" %}
 {% load static %}
-
+{% load crispy_forms_tags %}
+{% load tailwind_filters %}
 {% block body %}
+
 <div class="page_view" id="home_view">
     This is home page
 </div>
@@ -14,9 +16,9 @@
         {{message}}
         <form method="POST" id="bankstatement_form" enctype="multipart/form-data">  
             {% csrf_token %}  
-            {{ form.as_p }}  
+            {{ form|crispy }}  
             <button type="submit" class="save btn btn-default">Save</button>  
-    </form>  
+        </form>  
     </div>
     {% if not transaction_data.is_valid %}
     <div>

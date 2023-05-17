@@ -10,7 +10,7 @@ import PyPDF2
 import io
 import base64
 from .models import User
-from .forms import BankstatementFrom
+from .forms import BankstatementForm
 from .statement_processor import process_bankstatement
 from .utils import highlight_pdf
 
@@ -85,11 +85,11 @@ def index(request):
 def bankstatement(request):
     if request.method == "POST":
         CONTEXT={
-            "form": BankstatementFrom()
+            "form": BankstatementForm()
             }
         
         # Process form
-        bankstatement_form = BankstatementFrom(request.POST, request.FILES)
+        bankstatement_form = BankstatementForm(request.POST, request.FILES)
         if not bankstatement_form.is_valid():
             CONTEXT["message"] = "Couldn't Load PDF"
             return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
@@ -122,12 +122,12 @@ def bankstatement(request):
         return response
     else:
         CONTEXT={
-            "form": BankstatementFrom()
+            "form": BankstatementForm()
         }
         return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
 
 @login_required
-def highlighted_pdf(request):
+def highlighted_pdf():
     output_pdf_bytes = cache.get('output_pdf_bytes')
     output_pdf_bytes.seek(0) 
     response = FileResponse(output_pdf_bytes,  as_attachment=False, filename='highlighted_pdf.pdf')
