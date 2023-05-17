@@ -82,7 +82,7 @@ def track_actual_changes(transaction_records, actual_balance):
 def highlight_pdf(uploaded_pdf):
     # Open IoBuffer pdf
     doc = fitz.Document(stream = uploaded_pdf, filetype = 'pdf')
-    parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
+    # parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
 
     for page in doc:
         ### SEARCH

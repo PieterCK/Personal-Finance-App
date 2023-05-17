@@ -39,7 +39,6 @@ def logout_view(request):
 def register_view(request):
     if request.method == "POST":
         CONTEXT = {}
-        valid_register_info = True
 
         # Ensure username & email are unique
         username = request.POST["username"]
@@ -50,19 +49,17 @@ def register_view(request):
 
         if username in all_usernames:
             CONTEXT['message'] = "Username already taken."
-            valid_register_info = False
         if email in all_emails:
             CONTEXT['message'] = "Email already taken."
-            valid_register_info = False
 
         # Ensure password matches confirmation
         password = request.POST["password"]
         confirmation = request.POST["confirmation"]
         if password != confirmation:
             CONTEXT['message'] = "Passwords must match."
-            valid_register_info = False
 
-        # Returns error message if register infos aren't valid            
+        # Returns error message if register infos aren't valid
+        valid_register_info = CONTEXT['message'] == None            
         if not valid_register_info:
             return render(request, "ExpenseTracker/register.html", CONTEXT)
 
