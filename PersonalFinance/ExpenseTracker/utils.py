@@ -5,6 +5,22 @@ from decimal import Decimal
 import fitz
 import io
 
+def handle_file(uploaded_pdf, form):
+    '''
+    param: request.FILE object
+    return: 
+    '''
+    file_buffer = io.BytesIO()
+    for chunk in uploaded_pdf.chunks():
+        file_buffer.write(chunk)
+    
+    if form == "BUFFER":
+        return file_buffer
+    elif form == "OBJECT":
+        file_buffer.seek(0)
+        file_object = io.BufferedReader(file_buffer)
+        return file_object
+
 # Turn uploaded PDF into list of parsed pages
 def process_raw_pages(pages_read, parse_value):
     '''
@@ -78,21 +94,21 @@ def track_actual_changes(transaction_records, actual_balance):
         actual_balance['mutasi_cr'] += transaction_records['amount']
     return actual_balance
 
-def highlight_pdf(uploaded_pdf):
+def highlight_pdf(uploaded_pdf, bank_code):
     # Open IoBuffer pdf
     doc = fitz.Document(stream = uploaded_pdf, filetype = 'pdf')
-    # parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
-
+    parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
+    print(parse_value)
     for page in doc:
         ### SEARCH
         text_instances = None
         for value in parse_value:
             text_instances = page.search_for(value)
 
-        ### HIGHLIGHT
-        for inst in text_instances:
-            highlight = page.add_highlight_annot(inst)
-            highlight.update()
+            ### HIGHLIGHT
+            for inst in text_instances:
+                highlight = page.add_highlight_annot(inst)
+                highlight.update()
 
     ### OUTPUT
     output_pdf_bytes = io.BytesIO()

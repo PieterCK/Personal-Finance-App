@@ -26,4 +26,6 @@ urlpatterns = [
 
     path('bankstatement', views.bankstatement, name="bankstatement"),
     path('bankstatement/highlighted_pdf', views.highlighted_pdf, name="highlighted_pdf"),
+    path('bankstatement/original_pdf', views.original_pdf, name="original_pdf"),
+
 ]

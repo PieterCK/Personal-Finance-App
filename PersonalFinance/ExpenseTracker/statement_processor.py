@@ -1,8 +1,21 @@
 import re
 from typing import List
 from .models import StatementParser, TransactionRecord
-from .utils import process_raw_pages, clean_raw_parse, clean_transaction_details, cleanse_number, track_actual_changes
+from .utils import process_raw_pages, clean_transaction_details, cleanse_number, track_actual_changes, highlight_pdf
 
+def verify_pdf_is_bank_statement(parsed_pages ,parse_value):
+    matched_keyword = 0
+    for current_page in parsed_pages:
+        for keyword in parse_value:
+            if keyword in current_page:
+                matched_keyword += 1
+
+    not_bank_statement = matched_keyword < len(parse_value)*0.8
+    if not_bank_statement:
+        return False
+    else:
+        return True
+    
 def process_bca_statement(parsed_pages, trash_value, parse_value):
     statement_transactions = []
     stated_balance = {}
@@ -121,6 +134,12 @@ def process_bankstatement(bank_code, reader, input_value= None):
         for value in input_value.trash_value:
             trash_value.append(value)
 
+    is_bankstatement = verify_pdf_is_bank_statement(parsed_pages ,parse_value)
+    if not is_bankstatement:
+        return {
+            'is_correct_pdf': is_bankstatement
+        }
+    
     # Define output variables
     statement_transactions = []
     stated_balance = {}
@@ -141,7 +160,8 @@ def process_bankstatement(bank_code, reader, input_value= None):
         "stated_balance": stated_balance,
         "actual_balance": actual_balance,
         "suspicious_transactions": suspicious_transactions,
-        "is_valid": is_valid
+        "is_valid": is_valid,
+        "is_correct_pdf": is_bankstatement
     }
 
 def submit_transactions(bank_code, statement_transactions):

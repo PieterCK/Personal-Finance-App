@@ -20,11 +20,6 @@
             <button type="submit" class="save btn btn-default">Save</button>  
         </form>  
     </div>
-    {% if not transaction_data.is_valid %}
-    <div>
-        <button type="button" class="btn btn-primary" id ="display_highlighted_pdf">Begin Diagnostics</button>
-    </div>
-    {% endif %}
 </div>
 <div class="page_view" id="guide_view">
     This is guide page
@@ -32,11 +27,12 @@
 <div class="page_view" id="expensetracker_view">
     This is expense tracker page
 </div>
+{{show_uploaded_pdf}}
 {% endblock %}
 
 {% block script %}
-    {{ highlighted_pdf|json_script:"highlighted_pdf" }}
+    {{ show_diagnose_pdf|json_script:"show_diagnose_pdf" }}
+    {{ show_uploaded_pdf|json_script:"show_uploaded_pdf" }}
+
     <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
-    <script src="{% static 'ExpenseTracker/pdfjs/build/pdf.js' %}"></script>
-    <script src="//mozilla.github.io/pdf.js/build/pdf.js"></script>
 {% endblock %}

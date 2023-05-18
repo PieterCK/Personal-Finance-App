@@ -10,9 +10,9 @@ import PyPDF2
 import io
 import base64
 from .models import User
-from .forms import BankstatementForm
+from .forms import BankstatementForm, BankstatementDiagnoseForm
 from .statement_processor import process_bankstatement
-from .utils import highlight_pdf
+from .utils import highlight_pdf, handle_file
 
 # Create your views here.
 def login_view(request):
@@ -94,41 +94,60 @@ def bankstatement(request):
             CONTEXT["message"] = "Couldn't Load PDF"
             return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
         
+        bank_code = request.POST["bank"]
         # Read uploaded PDF file
         uploaded_pdf = request.FILES['file']
-        file_buffer = io.BytesIO()
-        for chunk in uploaded_pdf.chunks():
-            file_buffer.write(chunk)
-        file_buffer.seek(0)
-        print(file_buffer.read())
-        file_object = io.BufferedReader(file_buffer)
+        cache.set('original_pdf', uploaded_pdf, timeout=300)
+        file_object = handle_file(uploaded_pdf, "OBJECT")
 
         # Process uploaded PDF file
         reader = PyPDF2.PdfReader(file_object)
-        transaction_data = process_bankstatement('BCA', reader)
+        transaction_data = process_bankstatement(bank_code, reader)
         transaction_data['is_valid'] = False
-        # Return result
+        
+        if not transaction_data['is_correct_pdf']:
+            CONTEXT["message"] = "Couldn't Load PDF! Please make sure you're uploading the right PDF file or have selected the correct bank"
+            return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
+
         if transaction_data['is_valid']:
             CONTEXT["message"] = "Succesful! Looks like no imbalance between stated & parsed amount"
+            CONTEXT["show_uploaded_pdf"] = True
         else:
             CONTEXT["message"] = "Aww man, Looks like there's imbalance between stated & parsed amount"
-            output_pdf_bytes = highlight_pdf(file_buffer)
-            print(output_pdf_bytes)
+            CONTEXT["form"] = BankstatementDiagnoseForm()
+            CONTEXT["show_uploaded_pdf"] = False
+            CONTEXT["show_diagnose_pdf"] = True
+            file_buffer = handle_file(uploaded_pdf, "BUFFER")
+            file_buffer.seek(0)
+            output_pdf_bytes = highlight_pdf(file_buffer, bank_code)
             cache.set('output_pdf_bytes', output_pdf_bytes, timeout=300)
 
         CONTEXT["transaction_data"] = transaction_data
 
         response = render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
         return response
+    
     else:
         CONTEXT={
             "form": BankstatementForm()
         }
+        cache.delete('output_pdf_bytes')
+
+        if cache.get('original_pdf'):
+            CONTEXT["show_uploaded_pdf"] = True
         return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
 
 @login_required
-def highlighted_pdf():
+def original_pdf(request):
+    original_pdf_file = cache.get('original_pdf')
+    file_buffer = handle_file(original_pdf_file,"BUFFER")
+    file_buffer.seek(0)
+    response = FileResponse(file_buffer,  as_attachment=False, filename='original_bank_statement.pdf')
+    return response
+
+@login_required
+def highlighted_pdf(request):
     output_pdf_bytes = cache.get('output_pdf_bytes')
     output_pdf_bytes.seek(0) 
-    response = FileResponse(output_pdf_bytes,  as_attachment=False, filename='highlighted_pdf.pdf')
+    response = FileResponse(output_pdf_bytes,  as_attachment=False, filename='highlighted_bank_statement.pdf')
     return response

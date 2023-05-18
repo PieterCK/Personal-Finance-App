@@ -4,7 +4,20 @@ function display_pdf(file){
 }
 
 $(function () {
-    
+    var show_diagnose_pdf = JSON.parse(document.getElementById('show_diagnose_pdf').textContent);
+    var show_uploaded_pdf = JSON.parse(document.getElementById('show_uploaded_pdf').textContent);
+
+    if (show_diagnose_pdf){
+        var url = window.location.href + "/highlighted_pdf"
+        $('#pdf_preview').add("embed").attr("src", url)
+        console.log("show_diagnose_pdf")
+    }
+    if (show_uploaded_pdf){
+        var url = window.location.href + "/original_pdf"
+        $('#pdf_preview').add("embed").attr("src", url)
+        console.log("show_uploaded_pdf")
+    }
+
     // Default Page : home_view
     var other_pages = $("div.page_view")
     other_pages.hide();
@@ -39,50 +52,5 @@ $(function () {
             display_pdf(uploaded_file[0])
         }
     })
-
-    $("#display_highlighted_pdf").click(function () {
-        var url = window.location.href + "/highlighted_pdf"
-        $('#pdf_preview').add("embed").attr("src", url)
-        
-
-        // // Render PDF using PDF.js
-        // const BASE64_PDF = JSON.parse(document.getElementById('highlighted_pdf').textContent);
-        // var pdfData = atob(BASE64_PDF.replace(/^"+|"+$/g, ""))
-        // var pdfjsLib = window['pdfjs-dist/build/pdf'];
-        // pdfjsLib.GlobalWorkerOptions.workerSrc = '//mozilla.github.io/pdf.js/build/pdf.worker.js';
-        // console.log(pdfData)
-        // // Using DocumentInitParameters object to load binary data.
-        // var loadingTask = pdfjsLib.getDocument({data: pdfData});
-        // loadingTask.promise.then(function(pdf) {
-        // console.log('PDF loaded');
-        
-        // // Fetch the first page
-        // var pageNumber = 1;
-        // pdf.getPage(pageNumber).then(function(page) {
-        //     console.log('Page loaded');
-            
-        //     var scale = 1;
-        //     var viewport = page.getViewport({scale: scale});
-
-        //     // Prepare canvas using PDF page dimensions
-        //     var canvas = document.getElementById('highlighted_pdf_preview');
-        //     var context = canvas.getContext('2d');
-        //     canvas.height = viewport.height;
-        //     canvas.width = viewport.width;
-
-        //     // Render PDF page into canvas context
-        //     var renderContext = {
-        //     canvasContext: context,
-        //     viewport: viewport
-        //     };
-        //     var renderTask = page.render(renderContext);
-        //     renderTask.promise.then(function () {
-        //     console.log('Page rendered');
-        //     });
-        // });
-        // }, function (reason) {
-        // // PDF loading error
-        // console.error(reason);
-        // });
-    })
+    
 });

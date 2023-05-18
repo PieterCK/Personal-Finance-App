@@ -12,3 +12,6 @@ for bank in bank_codes:
 class BankstatementForm(forms.Form):  
     file = forms.FileField()
     bank = forms.ChoiceField(choices=bank_code_choices, required=True)
+
+class BankstatementDiagnoseForm(forms.Form):
+    keywords = forms.CharField(max_length=200, required=False)
