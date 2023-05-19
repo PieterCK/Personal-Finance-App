@@ -11,12 +11,17 @@ $(function () {
         var url = window.location.href + "/highlighted_pdf"
         $('#pdf_preview').add("embed").attr("src", url)
         console.log("show_diagnose_pdf")
+        $('#myModal').modal('show');
     }
     if (show_uploaded_pdf){
         var url = window.location.href + "/original_pdf"
         $('#pdf_preview').add("embed").attr("src", url)
         console.log("show_uploaded_pdf")
     }
+
+    $('#closeModal').click(function () {
+        $('#myModal').modal('hide');
+    });
 
     // Default Page : home_view
     var other_pages = $("div.page_view")
