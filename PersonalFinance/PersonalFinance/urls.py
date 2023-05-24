@@ -23,9 +23,10 @@ urlpatterns = [
     path('login_view', views.login_view, name="login"),
     path('logout_view', views.logout_view, name="logout"),
     path('register_view', views.register_view, name="register"),
+    path('bankstatement', views.BankstatementView.as_view(), name="bankstatement"),
 
-    path('bankstatement', views.bankstatement, name="bankstatement"),
-    path('bankstatement/highlighted_pdf', views.highlighted_pdf, name="highlighted_pdf"),
-    path('bankstatement/original_pdf', views.original_pdf, name="original_pdf"),
+    # API  endpoints
+    path('bankstatement/api/process_bankstatement', views.process_bankstatement, name='process_bankstatement'),
+    path('bankstatement/api/display_pdf/<str:pdf_type>', views.display_pdf, name="highlighted_pdf"),
 
 ]

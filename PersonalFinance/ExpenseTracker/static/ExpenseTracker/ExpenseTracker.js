@@ -4,24 +4,25 @@ function display_pdf(file){
 }
 
 $(function () {
-    var show_diagnose_pdf = JSON.parse(document.getElementById('show_diagnose_pdf').textContent);
-    var show_uploaded_pdf = JSON.parse(document.getElementById('show_uploaded_pdf').textContent);
+    var show_pdf = JSON.parse(document.getElementById('show_diagnose_pdf').textContent);
 
-    if (show_diagnose_pdf){
-        var url = window.location.href + "/highlighted_pdf"
+    if (show_pdf){
+        var url = window.location.href +"/"+show_pdf
         $('#pdf_preview').add("embed").attr("src", url)
-        console.log("show_diagnose_pdf")
-        $('#myModal').modal('show');
     }
-    if (show_uploaded_pdf){
-        var url = window.location.href + "/original_pdf"
-        $('#pdf_preview').add("embed").attr("src", url)
-        console.log("show_uploaded_pdf")
+    if (show_pdf === "highlighted"){
+        $('#myModal').modal('show');
     }
 
     $('#closeModal').click(function () {
         $('#myModal').modal('hide');
     });
+
+    // Handle Bankstatemen Form
+    $("form#bankstatement_form").change(()=>{
+        var bankstatement_form_inputs = $("form#bankstatement_form input")
+        console.log(bankstatement_form_inputs)
+    })
 
     // Default Page : home_view
     var other_pages = $("div.page_view")

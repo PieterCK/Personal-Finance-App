@@ -3,9 +3,7 @@ from .models import Bank
 
 bank_codes = Bank.objects.all().values_list('bank_code', flat=True)
 
-bank_code_choices = (
-    ('', 'Select Bank'),
-)
+bank_code_choices = ()
 for bank in bank_codes:
     bank_code_choices += ((bank, bank),)
 
