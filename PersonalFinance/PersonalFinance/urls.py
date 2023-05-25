@@ -26,7 +26,7 @@ urlpatterns = [
     path('bankstatement', views.BankstatementView.as_view(), name="bankstatement"),
 
     # API  endpoints
-    path('bankstatement/api/process_bankstatement', views.process_bankstatement, name='process_bankstatement'),
+    path('bankstatement/api/process_bankstatement', views.process_bankstatement_api, name='process_bankstatement'),
     path('bankstatement/api/display_pdf/<str:pdf_type>', views.display_pdf, name="highlighted_pdf"),
 
 ]

@@ -103,12 +103,16 @@ def process_bankstatement_api(request):
     if request.method == "POST":
         RESPONSE = {}
         # Process form
-        
+        form = BankstatementForm(request.POST)
+        if not form.is_valid():
+            RESPONSE["message"] = "Invalid form"
+            return JsonResponse(RESPONSE, safe=False)
 
         bank_code = request.POST["bank"]
-
+        print("BANK CODE: ", bank_code)
         # Read uploaded PDF file
         uploaded_pdf = request.FILES['file']
+        print("Uploaded PDF: ", uploaded_pdf)
         cache.set('original_pdf', uploaded_pdf, timeout=300)
         file_object = handle_file(uploaded_pdf, "OBJECT")
 
@@ -136,8 +140,8 @@ def process_bankstatement_api(request):
 
         RESPONSE["transaction_data"] = transaction_data
 
-        response = render(request, "ExpenseTracker/bankstatement.html",RESPONSE)
-        return HttpResponse("ADS")
+        response = JsonResponse(RESPONSE, safe=False)
+        return response
 
 @login_required
 def display_pdf(pdf_type, request):

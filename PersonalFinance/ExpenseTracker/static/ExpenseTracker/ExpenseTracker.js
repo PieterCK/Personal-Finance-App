@@ -1,10 +1,9 @@
 function display_pdf(file){
     $('#pdf_preview').add("embed").attr("src", URL.createObjectURL(file))
-    console.log(URL.createObjectURL(file))
 }
 
 $(function () {
-    var show_pdf = JSON.parse(document.getElementById('show_diagnose_pdf').textContent);
+    var show_pdf = JSON.parse(document.getElementById('show_pdf').textContent);
 
     if (show_pdf){
         var url = window.location.href +"/"+show_pdf
@@ -18,10 +17,15 @@ $(function () {
         $('#myModal').modal('hide');
     });
 
-    // Handle Bankstatemen Form
-    $("form#bankstatement_form").change(()=>{
-        var bankstatement_form_inputs = $("form#bankstatement_form input")
-        console.log(bankstatement_form_inputs)
+    var bankstatement_form =  $("#bankstatement_form")
+    bankstatement_form.submit(function (event) {
+        $.ajax({
+            url: bankstatement_form.attr('action'),
+            type: 'POST'
+        }).done(function(data){
+            console.log(data)
+            alert("Upload Success!")
+        })
     })
 
     // Default Page : home_view
