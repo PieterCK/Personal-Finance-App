@@ -13,27 +13,29 @@ function display_pdf_api(show_pdf){
 
 }
 
+function toggle_elements_view(elements, state){
+    elements.each(function(){
+        $(this).toggle(state)
+    })
+}
+
 function toggle_bankstatement_forms(state){
     var bankstatement_form =  $("#bankstatement_form")
-    var diagnose_form = $("#diagnose_form")
-
-    if(state){
-        bankstatement_form.show();
-        diagnose_form.hide()
-    }else{
-        bankstatement_form.hide();
-        diagnose_form.show()
-    }
+    var bankstatement_preview =  $("#bankstatement_preview")
+    toggle_elements_view(bankstatement_form, state)
+    toggle_elements_view(bankstatement_preview, !state)
 }
 
 function on_submit_file(data){
+    display_pdf_api(data.show_pdf)
+
     if (!data.is_valid){
-        toggle_bankstatement_forms()
+        toggle_bankstatement_forms(false)
     }
-    
 }
 
 $(function () {
+    toggle_bankstatement_forms(true)
     $("#bankstatement_form input").change(function () {
         var uploaded_file = $(this).prop('files')
         if (uploaded_file[0].type !== "application/pdf") {
@@ -63,8 +65,7 @@ $(function () {
             processData: false, 
             contentType: false,
             success: function(data) {
-                display_pdf_api(data.show_pdf)
-                
+                on_submit_file(data)
             },
             error: function(data) {
                 console.log(data)
