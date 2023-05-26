@@ -13,12 +13,19 @@
         <canvas id="highlighted_pdf_preview"></canvas>    
     </div>
     <div>
-        <form action="{% url 'process_bankstatement' %}" method="POST" id="bankstatement_form" enctype="multipart/form-data">  
+        <form id="bankstatement_form" enctype="multipart/form-data">  
             {% csrf_token %}  
             {{ form|crispy }}  
             <button type="submit" class="btn btn-primary">Save</button>  
         </form>  
     </div>
+    <div>
+      <form id="diagnose_form" enctype="multipart/form-data">  
+          {% csrf_token %}  
+          {{ diagnose_form|crispy }}  
+          <button type="submit" class="btn btn-primary">Submit</button>  
+      </form>  
+  </div>
 </div>
 <div class="page_view" id="guide_view">
     This is guide page
@@ -48,6 +55,8 @@
 
 {% block script %}
     {{ show_pdf|json_script:"show_pdf" }}
-
+    <script>
+     var bankStatementUrl = "{% url 'process_bankstatement' %}";
+    </script>
     <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
 {% endblock %}

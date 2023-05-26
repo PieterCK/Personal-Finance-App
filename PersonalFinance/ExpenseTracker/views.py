@@ -102,17 +102,10 @@ class BankstatementView(View):
 def process_bankstatement_api(request):
     if request.method == "POST":
         RESPONSE = {}
-        # Process form
-        form = BankstatementForm(request.POST)
-        if not form.is_valid():
-            RESPONSE["message"] = "Invalid form"
-            return JsonResponse(RESPONSE, safe=False)
 
-        bank_code = request.POST["bank"]
-        print("BANK CODE: ", bank_code)
-        # Read uploaded PDF file
-        uploaded_pdf = request.FILES['file']
-        print("Uploaded PDF: ", uploaded_pdf)
+        uploaded_pdf = request.FILES.get('uploaded_file')
+        bank_code = request.POST.get('bank')
+        
         cache.set('original_pdf', uploaded_pdf, timeout=300)
         file_object = handle_file(uploaded_pdf, "OBJECT")
 
@@ -123,14 +116,13 @@ def process_bankstatement_api(request):
 
         if not transaction_data['is_correct_pdf']:
             RESPONSE["message"] = "Couldn't Load PDF! Please make sure you're uploading the right PDF file or have selected the correct bank"
-            return render(request, "ExpenseTracker/bankstatement.html",RESPONSE)
+            return JsonResponse(RESPONSE, safe=False)
 
         if transaction_data['is_valid']:
             RESPONSE["message"] = "Succesful!"
             RESPONSE["show_pdf"] = 'original'
         else:
             RESPONSE["message"] = "Aww man, Looks like there's imbalance between stated & parsed amount"
-            RESPONSE["form"] = BankstatementDiagnoseForm()
             RESPONSE["show_pdf"] = 'highlighted'
 
             file_buffer = handle_file(uploaded_pdf, "BUFFER")
