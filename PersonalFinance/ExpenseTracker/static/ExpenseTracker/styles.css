@@ -19,3 +19,7 @@ div#bankstatement_view div{
     width: 50%;
     margin: 10px;
 }
+
+form#diagnose_form {
+    display: none;
+}
