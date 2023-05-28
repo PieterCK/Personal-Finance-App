@@ -12,6 +12,8 @@ class Bank(models.Model):
             return f"{self.bank_code} - {self.bank_name}"
 
 class StatementParser(models.Model): 
+    is_preset = models.BooleanField(default=False)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='custom_parser',  blank=True, null=True)
     bank_code = models.ForeignKey("Bank", on_delete=models.CASCADE, related_name="parse_value")
     pattern = models.TextField()
     category = models.CharField(max_length=50, choices=(('trash_value', 'Trash Value'), ('parse_value', 'Parse Value')))

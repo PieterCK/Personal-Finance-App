@@ -12,17 +12,20 @@
         <embed class="embed-responsive-item" id="pdf_preview"></embed>
         <canvas id="highlighted_pdf_preview"></canvas>    
     </div>
+    <div class="embed-responsive embed-responsive-21by9 border  rounded" id="parsed_result_div">
+      <embed id="parsed_result_preview"></embed>
+    </div>
     <div>
         <form id="bankstatement_form" enctype="multipart/form-data">  
+            
             {% csrf_token %}  
-            {{ form|crispy }}  
-            <button type="submit" class="btn btn-primary">Save</button>  
+            {% crispy form %}  
         </form>  
-        <form id="diagnose_form" enctype="multipart/form-data">  
+        <form id="diagnose_form">  
           {% csrf_token %}  
           {{ diagnose_form|crispy }}  
-          <button type="submit" class="btn btn-primary">Submit</button>  
-      </form>  
+          <button type="submit" class="btn btn-primary" value="Submit">
+        </form>  
     </div>
 </div>
 <div class="page_view" id="guide_view">
@@ -35,16 +38,16 @@
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">{{message}}</h5>
+          <h5 class="modal-title" id="modal_popup_title"></h5>
           <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
         </div>
-        <div class="modal-body">
+        <div class="modal-body" id="modal_popup_body">
             
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal" id="closeModal">I Understand</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal" id="closeModal">Ok!</button>
         </div>
       </div>
     </div>
@@ -56,5 +59,6 @@
     <script>
      var bankStatementUrl = "{% url 'process_bankstatement' %}";
     </script>
+    <script src="{% static 'ExpenseTracker/utils.js' %}"></script>
     <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
 {% endblock %}

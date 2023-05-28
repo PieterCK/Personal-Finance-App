@@ -1,0 +1,31 @@
+{% load static %}
+<div>
+    {% if error_msg %}
+    <h1>{{error_msg}}</h1>
+    {% else %}
+    <table class="table">
+        <thead class="thead-dark">
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Date</th>
+            <th scope="col">Info</th>
+            <th scope="col">Entry</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+            {% for transaction in transaction_data.transactions%}
+                <tr>
+                    <th scope="row">{{loop.index}}</th>
+                    <td>{{transaction.date}}</td>
+                    <td>{{transaction.info}}</td>
+                    <td>{{transaction.entry}}</td>
+                    <td>{{transaction.amount}}</td>
+                    <td>{{transaction.details}}</td>
+                </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+</div>

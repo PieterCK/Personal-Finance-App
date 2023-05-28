@@ -23,7 +23,6 @@ def process_bca_statement(parsed_pages, trash_value, parse_value):
         "mutasi_cr": 0,
         "mutasi_db": 0
     }
-
     for current_page in parsed_pages:
         for i in range(len(current_page)-2):            
             trf_date = re.search("(\d\d/\d\d)", current_page[i])
@@ -127,13 +126,10 @@ def process_bankstatement(bank_code, reader, input_value= None):
     parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
     trash_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "trash_value").values()[0]['pattern'])
     
-    parsed_pages = process_raw_pages(reader.pages, parse_value)
     if input_value:
-        for value in input_value.parse_value:
+        for value in input_value:
             parse_value.append(value)
-        for value in input_value.trash_value:
-            trash_value.append(value)
-
+    parsed_pages = process_raw_pages(reader.pages, parse_value)
     is_bankstatement = verify_pdf_is_bank_statement(parsed_pages ,parse_value)
     if not is_bankstatement:
         return {
@@ -154,7 +150,8 @@ def process_bankstatement(bank_code, reader, input_value= None):
     
     # Check whether parsed transactions are valid
     is_valid, suspicious_transactions = verify_processed_transactions(statement_transactions, stated_balance, actual_balance)
-
+    print(stated_balance["mutasi_db"])
+    print(actual_balance["mutasi_db"])
     return {
         "transactions": statement_transactions,
         "stated_balance": stated_balance,

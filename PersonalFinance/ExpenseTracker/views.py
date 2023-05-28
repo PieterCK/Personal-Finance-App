@@ -10,7 +10,7 @@ import json
 import PyPDF2
 import io
 import base64
-from .models import User
+from .models import User, StatementParser
 from .forms import BankstatementForm, BankstatementDiagnoseForm
 from .statement_processor import process_bankstatement
 from .utils import highlight_pdf, handle_file
@@ -96,6 +96,7 @@ class BankstatementView(View):
 
         if cache.get('original_pdf'):
             CONTEXT["show_pdf"] = 'original'
+        print("cache: ", cache)
         return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
 
 @login_required
@@ -105,14 +106,24 @@ def process_bankstatement_api(request):
 
         uploaded_pdf = request.FILES.get('uploaded_file')
         bank_code = request.POST.get('bank')
-        
-        cache.set('original_pdf', uploaded_pdf, timeout=300)
-        file_object = handle_file(uploaded_pdf, "OBJECT")
+        input_value = request.POST.get('input_value')
+
+        if input_value and cache.get('original_pdf'):
+            input_value = input_value.split(',')
+            original_pdf_info = cache.get('original_pdf')
+            bank_code = original_pdf_info["bank_code"]
+            file_object = handle_file(original_pdf_info["file"],"OBJECT")
+        else:
+            original_pdf_info = {
+                "file": uploaded_pdf,
+                "bank_code": bank_code
+            }
+            cache.set('original_pdf', original_pdf_info, timeout=300)
+            file_object = handle_file(uploaded_pdf, "OBJECT")
 
         # Process uploaded PDF file
         reader = PyPDF2.PdfReader(file_object)
-        transaction_data = process_bankstatement(bank_code, reader)
-        transaction_data['is_valid'] = False
+        transaction_data = process_bankstatement(bank_code, reader, input_value)
 
         if not transaction_data['is_correct_pdf']:
             RESPONSE["message"] = "Couldn't Load PDF! Please make sure you're uploading the right PDF file or have selected the correct bank"
@@ -121,29 +132,54 @@ def process_bankstatement_api(request):
         if transaction_data['is_valid']:
             RESPONSE["message"] = "Succesful!"
             RESPONSE["show_pdf"] = 'original'
+            cache.set('transaction_data', transaction_data, timeout=300)
         else:
             RESPONSE["message"] = "Aww man, Looks like there's imbalance between stated & parsed amount"
             RESPONSE["show_pdf"] = 'highlighted'
-
+            if not uploaded_pdf:
+                original_pdf_info = cache.get('original_pdf')
+                uploaded_pdf = original_pdf_info["file"]
             file_buffer = handle_file(uploaded_pdf, "BUFFER")
+            output_pdf_bytes = highlight_pdf(file_buffer, bank_code, input_value)
             file_buffer.seek(0)
-            output_pdf_bytes = highlight_pdf(file_buffer, bank_code)
             cache.set('output_pdf_bytes', output_pdf_bytes, timeout=300)
 
         RESPONSE["transaction_data"] = transaction_data
 
         response = JsonResponse(RESPONSE, safe=False)
         return response
+@login_required
+def statement_parser(request):
+    '''
+    !!!UNDER DEVELOPMENT!!!
+    '''
+    if request.method == "PUT":
+        # put new value to StatementParser
+        input_value = request.POST.get('input_value').split(',')
+        for value in input_value:
+            StatementParser.objects.create(value=value)
 
 @login_required
-def display_pdf(pdf_type, request):
+def parsed_transactions_view(request):
+    if request.method == "GET":
+        if cache.get('transaction_data'):
+            transaction_data = cache.get('transaction_data')
+            print(transaction_data)
+            return render(request, "ExpenseTracker/bankstatement_parsed.html", {"transaction_data": transaction_data})
+        else:
+            CONTEXT = {
+                "error_msg": "Please Retry Parsing Your Bank Statement"
+            }
+            return render(request,  "ExpenseTracker/bankstatement_parsed.html", CONTEXT)
+
+@login_required
+def display_pdf(request, pdf_type="original"):
     if pdf_type == "original":
-        original_pdf_file = cache.get('original_pdf')
-        file_buffer = handle_file(original_pdf_file,"BUFFER")
+        original_pdf_info = cache.get('original_pdf')
+        file_buffer = handle_file(original_pdf_info["file"],"BUFFER")
         file_buffer.seek(0)
-        response = FileResponse(file_buffer,  as_attachment=False, filename='original_bank_statement.pdf')
+        return FileResponse(file_buffer,  as_attachment=False, filename='original_bank_statement.pdf')
     elif pdf_type == "highlighted":
         output_pdf_bytes = cache.get('output_pdf_bytes')
         output_pdf_bytes.seek(0) 
-        response = FileResponse(output_pdf_bytes,  as_attachment=False, filename='highlighted_bank_statement.pdf')
-    return response
+        return FileResponse(output_pdf_bytes,  as_attachment=False, filename='highlighted_bank_statement.pdf')

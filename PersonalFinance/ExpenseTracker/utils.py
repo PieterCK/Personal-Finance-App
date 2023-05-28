@@ -11,7 +11,8 @@ def handle_file(uploaded_pdf, form):
     return: 
     '''
     file_buffer = io.BytesIO()
-    for chunk in uploaded_pdf.chunks():
+    tmp_pdf = uploaded_pdf
+    for chunk in tmp_pdf.chunks():
         file_buffer.write(chunk)
     
     if form == "BUFFER":
@@ -94,10 +95,13 @@ def track_actual_changes(transaction_records, actual_balance):
         actual_balance['mutasi_cr'] += transaction_records['amount']
     return actual_balance
 
-def highlight_pdf(uploaded_pdf, bank_code):
+def highlight_pdf(uploaded_pdf, bank_code, input_value=None):
     # Open IoBuffer pdf
     doc = fitz.Document(stream = uploaded_pdf, filetype = 'pdf')
     parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
+    if input_value:
+        for value in input_value:
+            parse_value.append(value)
     print(parse_value)
     for page in doc:
         ### SEARCH
