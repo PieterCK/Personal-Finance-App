@@ -1,7 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
-    './templates/ExpenseTracker/*.html',
+    './templates/ExpenseTracker/**/*.html',
     './node_modules/flowbite/**/*.js'
   ],
   theme: {

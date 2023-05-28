@@ -64,7 +64,7 @@ ROOT_URLCONF = 'PersonalFinance.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates/ExpenseTracker'],
+        'DIRS': [BASE_DIR / 'ExpenseTracker/templates/ExpenseTracker'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
