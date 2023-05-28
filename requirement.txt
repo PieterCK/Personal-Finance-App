@@ -4,3 +4,4 @@ urllib3==1.25.8
 pymupdf
 django-crispy-forms
 crispy-tailwind
+django-compressor
