@@ -4,6 +4,6 @@ function toggle_elements_view(elements, state){
     })
 }
 function display_pdf(query_selector , url){
-    query_selector.attr("src", url)
+    query_selector.add("embed").attr("src", url)
 }
 
