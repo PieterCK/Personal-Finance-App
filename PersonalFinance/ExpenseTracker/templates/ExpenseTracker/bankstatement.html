@@ -2,7 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 {% load tailwind_filters %}
-{% block body %}
+{% block content %}
 
 <div class="page_view" id="home_view">
     This is home page
@@ -52,7 +52,7 @@
       </div>
     </div>
   </div>
-{% endblock %}
+{% endblock content %}
 
 {% block script %}
     {{ show_pdf|json_script:"show_pdf" }}
