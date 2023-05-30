@@ -7,10 +7,9 @@
 <div class="page_view" id="home_view">
     This is home page
 </div>
-<div id="bankstatement_view">
-    <div class="embed-responsive embed-responsive-21by9 pdf_preview border  rounded" id="pdf_preview">
+<div id="bankstatement_view" class="bg-green-50">
+    <div class="embed-responsive embed-responsive-21by9 pdf_preview border focus:shadow-outline rounded" id="pdf_preview">
         <embed class="embed-responsive-item" ></embed>
-        <canvas id="highlighted_pdf_preview"></canvas>    
     </div>
     <div class="embed-responsive embed-responsive-21by9 border  rounded" id="parsed_result_div">
       <embed id="parsed_result_preview"></embed>
@@ -25,7 +24,10 @@
           {% csrf_token %}  
           {{ diagnose_form|crispy }}  
           <button type="submit" class="btn btn-primary" value="Submit">
-        </form>  
+        </form>
+        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id ="submit_parsed_data">
+          Submit
+        </button>  
     </div>
 </div>
 <div class="page_view" id="guide_view">
@@ -34,7 +36,7 @@
 <div class="page_view" id="expensetracker_view">
     This is expense tracker page
 </div>
-<div class="modal" tabindex="-1" role="dialog" id="myModal">
+<!-- <div class="modal" tabindex="-1" role="dialog" id="myModal">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
@@ -51,7 +53,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </div> -->
 {% endblock content %}
 
 {% block script %}

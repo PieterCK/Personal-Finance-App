@@ -8,18 +8,25 @@ button.nav_button {
 }
 
 div.pdf_preview {
-    width:200;
+    width:auto;
+    height: fit-content;
 }
 
 div#bankstatement_view {
     display: flex;
     width: 100%;
+    justify-content: center;
+    align-items: center;
+}
+div#bankstatement_view embed {
+    height: 450px;
+    width: 350px;
 }
 div#bankstatement_view div{
-    width: 50%;
     margin: 10px;
 }
 
 form#diagnose_form {
     display: none;
 }
+

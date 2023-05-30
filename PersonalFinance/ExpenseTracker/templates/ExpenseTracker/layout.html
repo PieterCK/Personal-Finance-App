@@ -15,6 +15,7 @@
     {% block script %}
     {% endblock %}
     {% compress css %}
+    <link rel="stylesheet" href="{% static 'ExpenseTracker/styles.css' %}">
     <link rel="stylesheet" href="{% static 'src/output.css' %}">
     {% endcompress %}
 </head>

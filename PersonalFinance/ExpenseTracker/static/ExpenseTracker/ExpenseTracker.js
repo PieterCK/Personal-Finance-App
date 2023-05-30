@@ -1,7 +1,8 @@
 class TogglePageForms{
     forms = {
         "bankstatement" : $("#bankstatement_form"),
-        "diagnose" : $("#diagnose_form")
+        "diagnose" : $("#diagnose_form"),
+        "submit" : $("#submit_parsed_data")
     }
     reset_view() {
         Object.values(this.forms).forEach(form => {
@@ -17,6 +18,10 @@ class TogglePageForms{
         this.reset_view()
         toggle_elements_view(this.forms.diagnose, true)
         console.log("toggling diagnose view: ", this.forms.diagnose)
+    }
+    confirm_view(){
+        this.reset_view()
+        toggle_elements_view(this.forms.submit, true)
     }
 }
 var togglePageForms;
@@ -139,7 +144,7 @@ function diagnose_form_mechanism(){
 
 function on_submit_file(data){
     display_pdf_api(data.show_pdf)
-    // toggle_elements_view($("#parsed_result_div"), true)
+    // 
     var popup_title = "Success!"
     var debit_difference = data.transaction_data.actual_balance.mutasi_db - data.transaction_data.stated_balance.mutasi_db
     var credit_difference = data.transaction_data.actual_balance.mutasi_cr - data.transaction_data.stated_balance.mutasi_cr
@@ -149,13 +154,14 @@ function on_submit_file(data){
         togglePageForms.diagnose_view()
         popup_title = "Error"
     } else{
-        // TogglePageForms.confirm_view
+        TogglePageForms.confirm_view
+        toggle_elements_view($("#parsed_result_div"), true)
     }
 
-    var parsed_result_frame = $("embed#parsed_result_preview")
+    var parsed_result_frame = $("parsed_result_div")
     let pdf_frame = $('#pdf_preview')
     var parsed_result_url = window.location.href +"/api/parsed_transactions_view"
-    display_pdf(pdf_frame, parsed_result_url)
+    display_pdf(parsed_result_frame, parsed_result_url)
     $("#modal_popup_title").html(popup_title)
     $("#modal_popup_body").html(popup_message)
     $('#myModal').modal('show');
