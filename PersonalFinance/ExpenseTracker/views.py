@@ -20,9 +20,9 @@ from django.views import View
 def login_view(request):
     if request.method == "POST":
         # Attempt to sign user in
-        email = request.POST["username"]
+        email = request.POST["email"]
         password = request.POST["password"]
-        user = authenticate(request, username=email, password=password)
+        user = authenticate(request, email=email, password=password)
         # Check if authentication successful
         if user is not None:
             login(request, user)
@@ -40,7 +40,9 @@ def logout_view(request):
 
 def register_view(request):
     if request.method == "POST":
-        CONTEXT = {}
+        CONTEXT = {
+            "message": None
+        }
 
         # Ensure username & email are unique
         username = request.POST["username"]

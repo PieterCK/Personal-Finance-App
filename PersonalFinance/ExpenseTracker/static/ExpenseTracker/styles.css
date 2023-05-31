@@ -30,3 +30,11 @@ form#diagnose_form {
     display: none;
 }
 
+html, body {
+    overflow: auto;
+    min-height: 100vh;
+}
+
+input:focus {
+    background-position: 0 0;
+}

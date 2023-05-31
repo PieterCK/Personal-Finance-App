@@ -2,65 +2,39 @@
 
 {% block content %}
 
-<!-- <h2 class="text-2xl font-bold mb-4">Register</h2>
-
-{% if message %}
-    <div>{{ message }}</div>
-{% endif %}
-
-<form action="{% url 'register' %}" method="post">
-    
-    <div class="mb-4">
-        <input class="border border-gray-300 rounded-md py-2 px-4 w-full" type="username" name="username" placeholder="Username">
-    </div>
-    <div class="mb-4">
-        <input class="border border-gray-300 rounded-md py-2 px-4 w-full" type="email" name="email" placeholder="Email Address">
-    </div>
-    <div class="mb-4">
-        <input class="border border-gray-300 rounded-md py-2 px-4 w-full" type="password" name="password" placeholder="Password">
-    </div>
-    <div class="mb-4">
-        <input class="border border-gray-300 rounded-md py-2 px-4 w-full" type="password" name="confirmation" placeholder="Confirm Password">
-    </div>
-    <input class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md" type="submit" value="Register">
-</form> -->
 
 	<!-- COMPONENT CODE -->
 	<div class="container mx-auto my-4 px-4 lg:px-20">
-        <form action="{% url 'register' %}" method="post">
-            
+        <form action="{% url 'register' %}" method="post" autocomplete="off">
+            {% csrf_token %} 
 		<div class="w-full p-8 my-4 md:px-12 lg:w-9/12 lg:pl-20 lg:pr-40 mr-auto rounded-2xl shadow-2xl">
 			<div class="flex">
-				<h1 class="font-bold uppercase text-5xl">Send us a <br /> message</h1>
+				<h3 class="font-bold uppercase text-4xl">Create an</br> account</h3>
 			</div>
 			<div class="grid grid-cols-1 gap-5 md:grid-cols-2 mt-5">
-                <input class="w-full bg-gray-50 text-gray-900 mt-2 p-3 rounded-lg focus:outline-none focus:shadow-outline"
-                type="username" name="username" placeholder="Username" />
-				<input class="w-full bg-gray-50 text-gray-900 mt-2 p-3 rounded-lg focus:outline-none focus:shadow-outline"
-                type="email" name="email" placeholder="Email" />
-				<input class="w-full bg-gray-50 text-gray-900 mt-2 p-3 rounded-lg focus:outline-none focus:shadow-outline"
-                type="password" name="password" placeholder="Password" />
-                <input class="w-full bg-gray-50 text-gray-900 mt-2 p-3 rounded-lg focus:outline-none focus:shadow-outline"
-                type="password" name="confirmation" placeholder="Confirm Password" />
-
-				<input class="w-full bg-gray-50 text-gray-900 mt-2 p-3 rounded-lg focus:outline-none focus:shadow-outline"
-            type="username"  placeholder="First Name*" />
-				<input class="w-full bg-gray-50 text-gray-900 mt-2 p-3 rounded-lg focus:outline-none focus:shadow-outline"
-            type="text" placeholder="Last Name*" />
-				<input class="w-full bg-gray-50 text-gray-900 mt-2 p-3 rounded-lg focus:outline-none focus:shadow-outline"
-            type="email" placeholder="Email*" />
-				<input class="w-full bg-gray-50 text-gray-900 mt-2 p-3 rounded-lg focus:outline-none focus:shadow-outline"
-            type="number" placeholder="Phone*" />
+        <div class="relative z-0 w-full mb-6 group">
+            <input autocomplete="false" type="username" name="username" id="floating_email" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+            <label for="floating_email" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Username</label>
         </div>
-				<div class="my-4">
-					<textarea placeholder="Message*" class="w-full h-32 bg-gray-50 text-gray-900 mt-2 p-3 rounded-lg focus:outline-none focus:shadow-outline"></textarea>
-				</div>
-                <p class="mt-4">Already have an account? <a href="{% url 'login' %}" class="text-green-500">Log In here.</a></p>
-
+        <div class="relative z-0 w-full mb-6 group">
+            <input autocomplete="false" type="email" name="email" id="floating_email" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+            <label for="floating_email" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Email address</label>
+        </div>
+        <div class="relative z-0 w-full mb-6 group">
+            <input autocomplete="false" type="password" name="password" id="floating_password" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+            <label for="floating_password" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Password</label>
+        </div>  
+        <div class="relative z-0 w-full mb-6 group">
+            <input autocomplete="false" type="password" name="confirmation" id="floating_repeat_password" class="block py-2.5 px-0 w-full text-sm text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer" placeholder=" " required />
+            <label for="floating_repeat_password" class="peer-focus:font-medium absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:left-0 peer-focus:text-blue-600 peer-focus:dark:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6">Confirm password</label>
+        </div>
+  
+        </div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-300">Already have an account? <a href="{% url 'login' %}" class="text-green-700 hover:underline dark:text-green-500">Log In here.</a></p>
 				<div class="my-2 w-1/2 lg:w-1/4">
-					<button class="uppercase text-sm font-bold tracking-wide bg-green-700 text-gray-100 p-3 rounded-lg w-full 
+					<button class="transition ease-in-out delay-150 bg-green-500 hover:-translate-y-1 hover:scale-110 hover:bg-green-500 duration-300  w-half text-white bg-green-700 hover:bg-green-800 uppercase text-sm font-bold tracking-wide bg-green-700 text-gray-100 p-3 rounded-lg w-full 
                       focus:outline-none focus:shadow-outline">
-            Send Message
+            Register
           </button>
 				</div>
 			</div>
@@ -69,14 +43,16 @@
 				class="w-full lg:-mt-96 lg:w-2/6 px-8 py-12 ml-auto bg-green-700 rounded-2xl">
 				<div class="flex flex-col text-white">
 					<h1 class="font-bold uppercase text-4xl my-4">Drop in our office</h1>
-					<p class="text-gray-400">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam
-						tincidunt arcu diam,
-						eu feugiat felis fermentum id. Curabitur vitae nibh viverra, auctor turpis sed, scelerisque ex.
+					<p class="text-gray-400">
+                        {% if message %}
+                           {{ message }}
+                        {%else%}
+                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam
+                            tincidunt arcu diam,
+                        {% endif %}
 					</p>
-
 					<div class="flex my-4 w-2/3 lg:w-1/2">
 						<div class="flex flex-col">
-							<i class="fas fa-map-marker-alt pt-2 pr-2" />
             </div>
         </div>
       </div>
