@@ -38,3 +38,7 @@ html, body {
 input:focus {
     background-position: 0 0;
 }
+
+div#parse_value_panel{
+    display: none;
+}

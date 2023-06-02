@@ -7,7 +7,7 @@
 <div class="page_view" id="home_view">
     This is home page
 </div>
-<div id="bankstatement_view" class="bg-green-50">
+<div id="bankstatement_view" class="bg-transparent">
     <div class="embed-responsive embed-responsive-21by9 pdf_preview border focus:shadow-outline rounded" id="pdf_preview">
         <embed class="embed-responsive-item" ></embed>
     </div>
@@ -16,10 +16,24 @@
     </div>
     <div>
         <form id="bankstatement_form" enctype="multipart/form-data">  
-            
             {% csrf_token %}  
             {% crispy form %}  
-        </form>  
+        </form>
+        <div id="parse_value_panel">
+          <table class="table-auto">
+            <thead>
+              <tr>
+                <th>Bank</th>
+                <th>Transaction Info</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td >BCA</td>
+                <td >ABADS ASDBBDSA ASDKSADKDSA BADSKASD </td>
+            </tbody>
+          </table>
+        </div>  
         <form id="diagnose_form">  
           {% csrf_token %}  
           {{ diagnose_form|crispy }}  
