@@ -23,11 +23,17 @@ urlpatterns = [
     path('login_view', views.login_view, name="login"),
     path('logout_view', views.logout_view, name="logout"),
     path('register_view', views.register_view, name="register"),
-    path('bankstatement', views.BankstatementView.as_view(), name="bankstatement"),
 
-    # API  endpoints
+    # bankstatement view
+    path('bankstatement', views.BankstatementView.as_view(), name="bankstatement"),
+    # bankstatement view API  endpoints
     path('bankstatement/api/process_bankstatement', views.process_bankstatement_api, name='process_bankstatement'),
     path('bankstatement/api/display_pdf/<str:pdf_type>', views.display_pdf, name="highlighted_pdf"),
     path('bankstatement/api/statement_parser', views.statement_parser, name='statement_parser'),
-    path('bankstatement/api/parsed_transactions_view', views.parsed_transactions_view, name='parsed_transactions_view')
+    path('bankstatement/api/parsed_transactions_view', views.parsed_transactions_view, name='parsed_transactions_view'),
+
+    # transaction labelling
+    path('labeling', views.LabelingView.as_view(), name="labeling")
+    # bankstatement view API  endpoints
+    # ---
 ]

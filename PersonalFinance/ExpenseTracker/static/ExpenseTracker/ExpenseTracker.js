@@ -7,6 +7,7 @@ class TogglePageForms{
     reset_view() {
         Object.values(this.forms).forEach(form => {
           toggle_elements_view(form, false);
+          console.log("reseting view: ",form)
         });
       }
     bankstatement_view(){

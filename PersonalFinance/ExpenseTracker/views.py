@@ -185,3 +185,7 @@ def display_pdf(request, pdf_type="original"):
         output_pdf_bytes = cache.get('output_pdf_bytes')
         output_pdf_bytes.seek(0) 
         return FileResponse(output_pdf_bytes,  as_attachment=False, filename='highlighted_bank_statement.pdf')
+
+class LabelingView(View):
+    def get(self, request):
+        return HttpResponse("UNDER CONSTRUCTION")
