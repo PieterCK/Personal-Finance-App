@@ -1,8 +1,9 @@
 class TogglePageForms{
     forms = {
-        "bankstatement" : $("#bankstatement_form"),
-        "diagnose" : $("#diagnose_form"),
-        "submit" : $("#submit_parsed_data")
+        "bankstatement_form" : $("#bankstatement_form"),
+        "diagnose_form" : $("#diagnose_form"),
+        "submit_btn" : $("#submit_parsed_data"),
+        "parse_value_panel": $("#parse_value_panel")
     }
     reset_view() {
         Object.values(this.forms).forEach(form => {
@@ -12,21 +13,24 @@ class TogglePageForms{
       }
     bankstatement_view(){
         this.reset_view()
-        toggle_elements_view(this.forms.bankstatement, true)
+        toggle_elements_view(this.forms.bankstatement_form, true)
         console.log("toggling bankstatement view: ", this.forms)
     }
     diagnose_view(){
         this.reset_view()
-        toggle_elements_view(this.forms.diagnose, true)
-        console.log("toggling diagnose view: ", this.forms.diagnose)
+        toggle_elements_view([
+            this.forms.diagnose_form,
+            this.forms.parse_value_panel],
+             true)
+        console.log("toggling diagnose view: ", this.forms.diagnose_form)
     }
     confirm_view(){
         this.reset_view()
-        toggle_elements_view(this.forms.submit, true)
+        toggle_elements_view(this.forms.submit_btn, true)
     }
 }
 var togglePageForms;
-$(function () {
+$ (document).ready (function () {
     setup_initial_view()
 
     bankstatement_form_mechanism()
@@ -71,7 +75,9 @@ function setup_initial_view(){
 
     if (show_pdf){
         display_pdf_api(show_pdf)
+        console.log("displaying pdf from cache")
     }
+    console.log("show_pdf cache: ", show_pdf)
 
 }
 
@@ -150,22 +156,20 @@ function on_submit_file(data){
     var debit_difference = data.transaction_data.actual_balance.mutasi_db - data.transaction_data.stated_balance.mutasi_db
     var credit_difference = data.transaction_data.actual_balance.mutasi_cr - data.transaction_data.stated_balance.mutasi_cr
     var popup_message = "debit difference: "+debit_difference+" credit difference: "+credit_difference
-    
+    var pdf_frame = $('#pdf_preview')
+
     if (!data.is_valid){
         togglePageForms.diagnose_view()
         popup_title = "Error"
+        var highlighted_pdf_url = window.location.href +"/api/display_pdf/highlighted"
+        display_pdf(pdf_frame, highlighted_pdf_url)
     } else{
         TogglePageForms.confirm_view
         toggle_elements_view($("#parsed_result_div"), true)
+        var parsed_result_frame = $("parsed_result_div")
+        var parsed_result_url = window.location.href +"/api/parsed_transactions_view"
+        display_pdf(pdf_frame, parsed_result_url)
     }
-
-    var parsed_result_frame = $("parsed_result_div")
-    let pdf_frame = $('#pdf_preview')
-    var parsed_result_url = window.location.href +"/api/parsed_transactions_view"
-    display_pdf(parsed_result_frame, parsed_result_url)
-    $("#modal_popup_title").html(popup_title)
-    $("#modal_popup_body").html(popup_message)
-    $('#myModal').modal('show');
 }
 
 function display_pdf_api(show_pdf){
