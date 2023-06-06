@@ -114,6 +114,7 @@ function bankstatement_form_mechanism(){
             processData: false, 
             contentType: false,
             success: function(data) {
+                data.bank_code = bankstatement_form.find('select[name=bank]').val()
                 on_submit_file(data)
             },
             error: function(data) {
@@ -157,18 +158,24 @@ function on_submit_file(data){
     var credit_difference = data.transaction_data.actual_balance.mutasi_cr - data.transaction_data.stated_balance.mutasi_cr
     var popup_message = "debit difference: "+debit_difference+" credit difference: "+credit_difference
     var pdf_frame = $('#pdf_preview')
-
-    if (!data.is_valid){
+    console.log("Data :", data)
+    console.log("data is valid:", data.is_valid)
+    if (!data.transaction_data.is_valid){
+        
         togglePageForms.diagnose_view()
         popup_title = "Error"
         var highlighted_pdf_url = window.location.href +"/api/display_pdf/highlighted"
         display_pdf(pdf_frame, highlighted_pdf_url)
+        $("#parse_value_panel_bank_code").html(data.bank_code)
+        $("#parse_value_panel_transaction_info").html(data.transaction_data.parse_value.join(", "))
     } else{
         TogglePageForms.confirm_view
         toggle_elements_view($("#parsed_result_div"), true)
         var parsed_result_frame = $("parsed_result_div")
         var parsed_result_url = window.location.href +"/api/parsed_transactions_view"
         display_pdf(pdf_frame, parsed_result_url)
+        $("#parse_value_panel_bank_code").html(data.bank_code)
+        $("#parse_value_panel_transaction_info").html(data.transaction_data.parse_value.join(", "))
     }
 }
 

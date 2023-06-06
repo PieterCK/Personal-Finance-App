@@ -25,3 +25,8 @@ class BankstatementForm(forms.Form):
 
 class BankstatementDiagnoseForm(forms.Form):
     keywords = forms.CharField(max_length=200, required=False, label="Transaction Keyword")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper(self)
+        self.helper.add_input(Submit('add', 'Add'))
+        

@@ -150,6 +150,12 @@ def process_bankstatement_api(request):
 
         response = JsonResponse(RESPONSE, safe=False)
         return response
+
+# @login_required
+# class TransactionLabellingView(View):
+#     def get(self, request):
+
+
 @login_required
 def statement_parser(request):
     '''

@@ -2,6 +2,8 @@ import re
 from typing import List
 from .models import StatementParser, TransactionRecord
 from .utils import process_raw_pages, clean_transaction_details, cleanse_number, track_actual_changes, highlight_pdf
+import json
+
 
 def verify_pdf_is_bank_statement(parsed_pages ,parse_value):
     matched_keyword = 0
@@ -150,15 +152,15 @@ def process_bankstatement(bank_code, reader, input_value= None):
     
     # Check whether parsed transactions are valid
     is_valid, suspicious_transactions = verify_processed_transactions(statement_transactions, stated_balance, actual_balance)
-    print(stated_balance["mutasi_db"])
-    print(actual_balance["mutasi_db"])
+    parse_value.remove("\d\d/\d\d")
     return {
         "transactions": statement_transactions,
         "stated_balance": stated_balance,
         "actual_balance": actual_balance,
         "suspicious_transactions": suspicious_transactions,
         "is_valid": is_valid,
-        "is_correct_pdf": is_bankstatement
+        "is_correct_pdf": is_bankstatement,
+        "parse_value": parse_value
     }
 
 def submit_transactions(bank_code, statement_transactions):

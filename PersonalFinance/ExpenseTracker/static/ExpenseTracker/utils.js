@@ -1,5 +1,4 @@
 function toggle_elements_view(elements, state){
-    console.log(elements)
     if (Array.isArray(elements)){
         elements.forEach(function(element){
             console.log(element)
@@ -12,6 +11,8 @@ function toggle_elements_view(elements, state){
     }   
 }
 function display_pdf(query_selector , url){
-    query_selector.add("embed").attr("src", url)
+    query_selector.find('embed').remove();
+    var embedElement = $('<embed src="' + url + '" width="500" height="400" class="rounded-lg" type="application/pdf">');
+    query_selector.append(embedElement);
 }
 

@@ -8,11 +8,11 @@
     This is home page
 </div>
 <div id="bankstatement_view" class="bg-transparent">
-    <div class="embed-responsive embed-responsive-21by9 pdf_preview border focus:shadow-outline rounded" id="pdf_preview">
-        <embed class="embed-responsive-item" ></embed>
+    <div class="embed-responsive embed-responsive-21by9 pdf_preview border rounded-lg focus:shadow-outline rounded" id="pdf_preview">
+        <embed class="embed-responsive-item rounded-lg" ></embed>
     </div>
-    <div class="embed-responsive embed-responsive-21by9 border  rounded" id="parsed_result_div">
-      <embed id="parsed_result_preview"></embed>
+    <div class="embed-responsive embed-responsive-21by9 border  rounded-lg" id="parsed_result_div">
+      <embed id="parsed_result_preview rounded-lg"></embed>
     </div>
     <div>
         <form id="bankstatement_form" enctype="multipart/form-data">  
@@ -20,19 +20,27 @@
             {% crispy form %}  
         </form>
         <div id="parse_value_panel">
-          <table class="table-auto">
-            <thead>
-              <tr>
-                <th>Bank</th>
-                <th>Transaction Info</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td >BCA</td>
-                <td >ABADS ASDBBDSA ASDKSADKDSA BADSKASD </td>
-            </tbody>
-          </table>
+          <div class="w-full ">
+            <div class="overflow-x-auto">
+              <table class="min-w-full rounded-lg overflow-hidden">
+                <thead class="rounded bg-green-500">
+                  <tr >
+                    <th class="py-2 px-4 bg-green-500 text-left">Bank</th>
+                    <th class="py-2 px-4 bg-green-500 text-left">Known Transaction info</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="py-2 px-4 border-b" id="parse_value_panel_bank_code">BCA</td>
+                    <td class="py-2 px-4 border-b" id="parse_value_panel_transaction_info">
+                      This is a long text that should not overlap with the first column. It will automatically wrap to a new line if necessary.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
         </div>  
         <form id="diagnose_form">  
           {% csrf_token %}  
@@ -50,24 +58,6 @@
 <div class="page_view" id="expensetracker_view">
     This is expense tracker page
 </div>
-<!-- <div class="modal" tabindex="-1" role="dialog" id="myModal">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modal_popup_title"></h5>
-          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
-        </div>
-        <div class="modal-body" id="modal_popup_body">
-            
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-dismiss="modal" id="closeModal">Ok!</button>
-        </div>
-      </div>
-    </div>
-  </div> -->
 {% endblock content %}
 
 {% block script %}
