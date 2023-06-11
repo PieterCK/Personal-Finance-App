@@ -172,7 +172,6 @@ def parsed_transactions_view(request):
     if request.method == "GET":
         if cache.get('transaction_data'):
             transaction_data = cache.get('transaction_data')
-            print(transaction_data)
             return render(request, "ExpenseTracker/bankstatement_parsed.html", {"transaction_data": transaction_data})
         else:
             CONTEXT = {
