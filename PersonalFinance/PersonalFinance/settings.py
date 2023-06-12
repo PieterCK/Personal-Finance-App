@@ -37,8 +37,6 @@ INSTALLED_APPS = [
     'fitz',
     'urllib',
     'PyPDF2',
-    'crispy_forms',
-    "crispy_tailwind",
     'ExpenseTracker',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -129,11 +127,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = 'ExpenseTracker/static/'
 STATIC_ROOT = 'var/static_root/'
 STATICFILES_DIRS = [
-    'static',
-    'var/static_root'
+    BASE_DIR / 'ExpenseTracker/static/',
+    '/var/static_root/',
     ]
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

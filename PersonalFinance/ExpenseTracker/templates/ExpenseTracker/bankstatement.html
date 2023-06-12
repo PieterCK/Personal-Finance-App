@@ -1,7 +1,6 @@
 {% extends "ExpenseTracker/layout.html" %}
 {% load static %}
-{% load crispy_forms_tags %}
-{% load tailwind_filters %}
+
 {% block content %}
 
 <div class="page_view" id="app">
@@ -16,8 +15,7 @@
     </div>
     <div>
         <form id="bankstatement_form" enctype="multipart/form-data">  
-            {% csrf_token %}  
-            {% crispy form %}  
+             
         </form>
         <div id="parse_value_panel">
           <div class="w-full ">
@@ -44,7 +42,6 @@
         </div>  
         <form id="diagnose_form">  
           {% csrf_token %}  
-          {{ diagnose_form|crispy }}  
           <button type="submit" class="btn btn-primary" value="Submit">
         </form>
         <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id ="submit_parsed_data">
@@ -65,6 +62,5 @@
     <script>
      var bankStatementUrl = "{% url 'process_bankstatement' %}";
     </script>
-    <script src="{% static 'ExpenseTracker/utils.js' %}"></script>
-    <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
+    <!-- <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script> -->
 {% endblock %}
