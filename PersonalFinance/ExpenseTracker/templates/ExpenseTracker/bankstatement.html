@@ -3,19 +3,20 @@
 
 {% block content %}
 
-<div class="page_view" id="app">
+<div class="page_view">
     This is home page
 </div>
 <div id="bankstatement_view" class="bg-transparent">
-    <div class="embed-responsive embed-responsive-21by9 pdf_preview border rounded-lg focus:shadow-outline rounded" id="pdf_preview">
-        <embed class="embed-responsive-item rounded-lg" ></embed>
+    <div id="vue_pdf_viewer">
+
     </div>
     <div class="embed-responsive embed-responsive-21by9 border  rounded-lg" id="parsed_result_div">
       <embed id="parsed_result_preview rounded-lg"></embed>
     </div>
     <div>
         <form id="bankstatement_form" enctype="multipart/form-data">  
-             
+          {% csrf_token %}
+          
         </form>
         <div id="parse_value_panel">
           <div class="w-full ">
@@ -38,15 +39,12 @@
               </table>
             </div>
           </div>
-          
         </div>  
         <form id="diagnose_form">  
-          {% csrf_token %}  
+          {% csrf_token %}
+          {{ diagnose_form }}
           <button type="submit" class="btn btn-primary" value="Submit">
         </form>
-        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" id ="submit_parsed_data">
-          Submit
-        </button>  
     </div>
 </div>
 <div class="page_view" id="guide_view">
@@ -58,9 +56,10 @@
 {% endblock content %}
 
 {% block script %}
-    {{ show_pdf|json_script:"show_pdf" }}
-    <script>
-     var bankStatementUrl = "{% url 'process_bankstatement' %}";
-    </script>
-    <!-- <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script> -->
+<script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
+<script src="{% static 'ExpenseTracker/utils.js' %}"></script>
+  {{ show_pdf|json_script:"show_pdf" }}
+  <script>
+    var bankStatementUrl = "{% url 'process_bankstatement' %}";
+  </script>
 {% endblock %}

@@ -1,10 +1,10 @@
 import { createApp } from 'vue'
-import App from './App.vue'
 import vuetify from './plugins/vuetify'
 import { loadFonts } from './plugins/webfontloader'
+import { createVuetify } from 'vuetify'
 
 loadFonts()
+export const vuetifyTheme = createVuetify({
+  theme: { defaultTheme: 'dark' },
+})
 
-createApp(App)
-  .use(vuetify)
-  .mount('#app')
