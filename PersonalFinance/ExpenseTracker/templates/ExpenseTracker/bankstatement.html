@@ -19,7 +19,7 @@
           
         </form>
         <div id="parse_value_panel">
-          <div class="w-full ">
+          <div class="w-full max-w-sm">
             <div class="overflow-x-auto">
               <table class="min-w-full rounded-lg overflow-hidden">
                 <thead class="rounded bg-green-500">
@@ -32,7 +32,6 @@
                   <tr>
                     <td class="py-2 px-4 border-b" id="parse_value_panel_bank_code">BCA</td>
                     <td class="py-2 px-4 border-b" id="parse_value_panel_transaction_info">
-                      This is a long text that should not overlap with the first column. It will automatically wrap to a new line if necessary.
                     </td>
                   </tr>
                 </tbody>
@@ -40,11 +39,6 @@
             </div>
           </div>
         </div>  
-        <form id="diagnose_form">  
-          {% csrf_token %}
-          {{ diagnose_form }}
-          <button type="submit" class="btn btn-primary" value="Submit">
-        </form>
     </div>
 </div>
 <div class="page_view" id="guide_view">
