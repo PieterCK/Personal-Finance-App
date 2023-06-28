@@ -8,7 +8,6 @@
         <option>BNI</option>
         <option>BTPN</option>
     </select>
-    <div>Selected Bank: {{ bank_code }}</div>
     <button @click="submitForm" type="submit" class="text-white mt-2 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">Extract Transactions</button>
 </template>
 
@@ -24,10 +23,11 @@ export default {
       
     };
   },
-  emits: ['response'],
+  emits: ['response','pdf'],
   methods: {
     updateFile(event) {
       this.file = event.target.files[0];
+      this.$emit('pdf', URL.createObjectURL(this.file))
     },
     submitForm() {
       if (this.file && this.bank_code) {
@@ -54,7 +54,7 @@ export default {
         .then(response => {
             // Process the response data
             let data = response.data
-            this.$emit('response', data.transaction_data.is_valid)
+            this.$emit('response', data)
             console.log(data);
         })
         .catch(error => {
