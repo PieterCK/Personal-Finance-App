@@ -1,6 +1,8 @@
 <template>
-<BankstatementForms v-if="form === 'upload_form'"/>
-<DiagnoseForm v-else-if="form === 'diagnose_form'" />
+    <form @submit.prevent enctype="multipart/form-data">
+        <BankstatementForms @response="(msg) => is_valid = msg" v-if="form === 'upload_form'"/>
+        <DiagnoseForm v-else-if="form === 'diagnose_form'" />
+    </form>
 </template>
 
 <script>
@@ -15,10 +17,17 @@ export default {
     data(){
         return {
             form : "upload_form",
+            is_valid: true
         }
     },
-    method: {
-
-    }
+    watch: {
+        is_valid(is_valid) {
+            if(is_valid){
+                this.form = "upload_form"
+            } else{
+                this.form = "diagnose_form"
+            }
+        }
+  }
 }
 </script>
