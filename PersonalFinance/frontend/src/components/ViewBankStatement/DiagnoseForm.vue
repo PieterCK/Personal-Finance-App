@@ -44,14 +44,10 @@ export default {
     },
     computed:{
         concatValues(){
-            let consolidated_parse_values = []
-            let parse_value = type(this.parse_values)
-
-            consolidated_parse_values.concat(parse_value)
-            consolidated_parse_values.push(this.input_values)
-            return consolidated_parse_values
+            return this.parse_values.concat(this.input_values)
         },
     },
+    emits: ['response'],
     methods: {
         fetchData() {
             const baseUrl = process.env.VUE_APP_BASE_URL;
@@ -59,13 +55,18 @@ export default {
             axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
             const formData = new FormData(); // Create a new FormData object
 
-            formData.append('uploaded_file', this.input_values);
+            formData.append('input_value', this.input_values);
 
             axios.post(bankStatementUrl, formData)
             .then(response => {
                 // Process the response data
                 let data = response.data
-                console.log(data);
+                if (data.redir_url){
+                  window.location.href = `${baseUrl}`+data.redir_url
+                }else{
+                  console.log("no redir")
+                  this.$emit('response', data)
+                }
             })
             .catch(error => {
                 // Handle any error that occurs

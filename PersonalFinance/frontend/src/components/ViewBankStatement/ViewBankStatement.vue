@@ -6,7 +6,8 @@
             @pdf="(url) => pdf_url = url" 
             v-if="form === 'upload_form'"
         />
-        <DiagnoseForm 
+        <DiagnoseForm
+            @response="(msg) => handleResponse(msg)" 
             :parse_values="parse_values"    
             v-else-if="form === 'diagnose_form'" 
         />

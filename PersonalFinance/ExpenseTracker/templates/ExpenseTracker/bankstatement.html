@@ -7,39 +7,7 @@
     This is home page
 </div>
 <div id="bankstatement_view" class="bg-transparent">
-    <div id="vue_pdf_viewer">
-
-    </div>
-    <div class="embed-responsive embed-responsive-21by9 border  rounded-lg" id="parsed_result_div">
-      <embed id="parsed_result_preview rounded-lg"></embed>
-    </div>
-    <div>
-        <form id="bankstatement_form" enctype="multipart/form-data">  
-          {% csrf_token %}
-          
-        </form>
-        <div id="parse_value_panel">
-          <div class="w-full max-w-sm">
-            <div class="overflow-x-auto">
-              <table class="min-w-full rounded-lg overflow-hidden">
-                <thead class="rounded bg-green-500">
-                  <tr >
-                    <th class="py-2 px-4 bg-green-500 text-left">Bank</th>
-                    <th class="py-2 px-4 bg-green-500 text-left">Known Transaction info</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="py-2 px-4 border-b" id="parse_value_panel_bank_code">BCA</td>
-                    <td class="py-2 px-4 border-b" id="parse_value_panel_transaction_info">
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>  
-    </div>
+   
 </div>
 <div class="page_view" id="guide_view">
     This is guide page
@@ -52,8 +20,4 @@
 {% block script %}
 <script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
 <script src="{% static 'ExpenseTracker/utils.js' %}"></script>
-  {{ show_pdf|json_script:"show_pdf" }}
-  <script>
-    var bankStatementUrl = "{% url 'process_bankstatement' %}";
-  </script>
 {% endblock %}
