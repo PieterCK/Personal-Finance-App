@@ -6,16 +6,14 @@ from django.shortcuts import HttpResponse, HttpResponseRedirect, render
 from django.urls import reverse
 from django.http import FileResponse, JsonResponse
 from django.core.cache import cache
-import json
 import PyPDF2
-import io
-import base64
+
 from .models import User, StatementParser
 from .forms import BankstatementForm, BankstatementDiagnoseForm
 from .statement_processor import process_bankstatement
 from .utils import highlight_pdf, handle_file
 from django.views import View
-
+from json import dumps
 # Create your views here.
 def login_view(request):
     if request.method == "POST":
@@ -98,7 +96,6 @@ class BankstatementView(View):
 
         if cache.get('original_pdf'):
             CONTEXT["show_pdf"] = 'original'
-        print("cache: ", cache)
         return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
 
 @login_required
@@ -115,13 +112,16 @@ def process_bankstatement_api(request):
             original_pdf_info = cache.get('original_pdf')
             bank_code = original_pdf_info["bank_code"]
             file_object = handle_file(original_pdf_info["file"],"OBJECT")
-        else:
+        elif not input_value and uploaded_pdf and bank_code:
             original_pdf_info = {
                 "file": uploaded_pdf,
                 "bank_code": bank_code
             }
             cache.set('original_pdf', original_pdf_info, timeout=300)
             file_object = handle_file(uploaded_pdf, "OBJECT")
+        else:
+            RESPONSE['redir_url'] = 'bankstatement'
+            return JsonResponse(RESPONSE, safe=False)
 
         # Process uploaded PDF file
         reader = PyPDF2.PdfReader(file_object)
@@ -132,9 +132,9 @@ def process_bankstatement_api(request):
             return JsonResponse(RESPONSE, safe=False)
 
         if transaction_data['is_valid']:
-            RESPONSE["message"] = "Succesful!"
-            RESPONSE["show_pdf"] = 'original'
             cache.set('transaction_data', transaction_data, timeout=300)
+            RESPONSE['redir_url'] = 'labeling'
+            return JsonResponse(RESPONSE, safe=False)
         else:
             RESPONSE["message"] = "Aww man, Looks like there's imbalance between stated & parsed amount"
             RESPONSE["show_pdf"] = 'highlighted'
@@ -151,10 +151,16 @@ def process_bankstatement_api(request):
         response = JsonResponse(RESPONSE, safe=False)
         return response
 
-# @login_required
-# class TransactionLabellingView(View):
-#     def get(self, request):
-
+@method_decorator(login_required, name='dispatch')
+class TransactionLabelingView(View):
+    def get(self, request):
+        CONTEXT= {}
+        CONTEXT['transaction_data']="transaction_data"
+        transaction_data = cache.get("transaction_data")
+        print("TRANSACTION DATA: ", transaction_data)
+        if transaction_data:
+            CONTEXT['transaction_data']=transaction_data['transactions']
+        return render(request, "ExpenseTracker/transaction_labeling.html", CONTEXT)   
 
 @login_required
 def statement_parser(request):
@@ -190,7 +196,3 @@ def display_pdf(request, pdf_type="original"):
         output_pdf_bytes = cache.get('output_pdf_bytes')
         output_pdf_bytes.seek(0) 
         return FileResponse(output_pdf_bytes,  as_attachment=False, filename='highlighted_bank_statement.pdf')
-
-class LabelingView(View):
-    def get(self, request):
-        return HttpResponse("UNDER CONSTRUCTION")

@@ -31,11 +31,8 @@ class TogglePageForms{
 }
 var togglePageForms;
 $ (document).ready (function () {
-    setup_initial_view()
 
     bankstatement_form_mechanism()
-
-    diagnose_form_mechanism()
 
     modal_mechanism()
     
@@ -73,12 +70,6 @@ function setup_initial_view(){
     toggle_elements_view($("#parsed_result_div"), false)
     var show_pdf = JSON.parse(document.getElementById('show_pdf').textContent);
 
-    if (show_pdf){
-        display_pdf_api(show_pdf)
-        console.log("displaying pdf from cache")
-    }
-    console.log("show_pdf cache: ", show_pdf)
-
 }
 
 function bankstatement_form_mechanism(){
@@ -88,67 +79,35 @@ function bankstatement_form_mechanism(){
         if (uploaded_file.type !== "application/pdf") {
             alert("Please Upload PDF File!")
             location.reload()
-        } else {
-            var file_url = URL.createObjectURL(uploaded_file)
-            let pdf_frame = $("#pdf_preview")
-            display_pdf(pdf_frame, file_url)
         }
     });
-
-    var bankstatement_form =  $("#bankstatement_form")
-    bankstatement_form.submit(function (event) {
-        var csrftoken = Cookies.get('csrftoken');
-        event.preventDefault();
-        var formData = new FormData(); // Create a new FormData object
-
-        // Append the uploaded file and other form data to the FormData object
-        formData.append('uploaded_file', bankstatement_form.find('input[type=file]')[0].files[0]);
-        formData.append('bank', bankstatement_form.find('select[name=bank]').val());
-        
-        $.ajax({
-            url: bankStatementUrl,
-            type: 'POST',
-            headers: {'X-CSRFToken': csrftoken},
-            mode: 'same-origin',
-            data: formData,
-            processData: false, 
-            contentType: false,
-            success: function(data) {
-                data.bank_code = bankstatement_form.find('select[name=bank]').val()
-                on_submit_file(data)
-            },
-            error: function(data) {
-                console.log(data)
-            }
-        });
-    })
 }
 
-function diagnose_form_mechanism(){
-    var diagnose_form =  $("#diagnose_form")
-    diagnose_form.submit(function (event) {
-        var csrftoken = Cookies.get('csrftoken');
-        event.preventDefault();
-        var formData = new FormData();
+// function diagnose_form_mechanism(){
+//     var diagnose_form =  $("#diagnose_form")
+//     diagnose_form.submit(function (event) {
+//         var csrftoken = Cookies.get('csrftoken');
+//         event.preventDefault();
+//         var formData = new FormData();
 
-        formData.append('input_value', diagnose_form.find('input[name=keywords]').val());
-        $.ajax({
-            url: bankStatementUrl,
-            type: 'POST',
-            headers: {'X-CSRFToken': csrftoken},
-            mode: 'same-origin',
-            data: formData,
-            processData: false, 
-            contentType: false,
-            success: function(data) {
-                on_submit_file(data)
-            },
-            error: function(data) {
-                console.log(data)
-            }
-        });
-    })
-}
+//         formData.append('input_value', diagnose_form.find('input[name=keywords]').val());
+//         $.ajax({
+//             url: bankStatementUrl,
+//             type: 'POST',
+//             headers: {'X-CSRFToken': csrftoken},
+//             mode: 'same-origin',
+//             data: formData,
+//             processData: false, 
+//             contentType: false,
+//             success: function(data) {
+//                 on_submit_file(data)
+//             },
+//             error: function(data) {
+//                 console.log(data)
+//             }
+//         });
+//     })
+// }
 
 function on_submit_file(data){
     display_pdf_api(data.show_pdf)

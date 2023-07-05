@@ -54,8 +54,12 @@ export default {
         .then(response => {
             // Process the response data
             let data = response.data
-            this.$emit('response', data)
-            console.log(data);
+            console.log(data)
+            if (data.redir_url){
+              window.location.href = `${baseUrl}`+data.redir_url
+            }else{
+              this.$emit('response', data)
+            }
         })
         .catch(error => {
             // Handle any error that occurs

@@ -26,6 +26,7 @@ urlpatterns = [
 
     # bankstatement view
     path('bankstatement', views.BankstatementView.as_view(), name="bankstatement"),
+    
     # bankstatement view API  endpoints
     path('bankstatement/api/process_bankstatement', views.process_bankstatement_api, name='process_bankstatement'),
     path('bankstatement/api/display_pdf/<str:pdf_type>', views.display_pdf, name="highlighted_pdf"),
@@ -33,7 +34,7 @@ urlpatterns = [
     path('bankstatement/api/parsed_transactions_view', views.parsed_transactions_view, name='parsed_transactions_view'),
 
     # transaction labelling
-    path('labeling', views.LabelingView.as_view(), name="labeling")
+    path('labeling', views.TransactionLabelingView.as_view(), name="labeling")
     # bankstatement view API  endpoints
     # ---
 ]
