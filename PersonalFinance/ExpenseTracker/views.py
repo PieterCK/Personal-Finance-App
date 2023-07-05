@@ -6,16 +6,14 @@ from django.shortcuts import HttpResponse, HttpResponseRedirect, render
 from django.urls import reverse
 from django.http import FileResponse, JsonResponse
 from django.core.cache import cache
-import json
 import PyPDF2
-import io
-import base64
+
 from .models import User, StatementParser
 from .forms import BankstatementForm, BankstatementDiagnoseForm
 from .statement_processor import process_bankstatement
 from .utils import highlight_pdf, handle_file
 from django.views import View
-
+from json import dumps
 # Create your views here.
 def login_view(request):
     if request.method == "POST":
@@ -156,7 +154,13 @@ def process_bankstatement_api(request):
 @method_decorator(login_required, name='dispatch')
 class TransactionLabelingView(View):
     def get(self, request):
-        return render(request, "ExpenseTracker/transaction_labeling.html")        
+        CONTEXT= {}
+        CONTEXT['transaction_data']="transaction_data"
+        transaction_data = cache.get("transaction_data")
+        print("TRANSACTION DATA: ", transaction_data)
+        if transaction_data:
+            CONTEXT['transaction_data']=transaction_data['transactions']
+        return render(request, "ExpenseTracker/transaction_labeling.html", CONTEXT)   
 
 @login_required
 def statement_parser(request):

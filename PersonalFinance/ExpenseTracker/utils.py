@@ -85,7 +85,7 @@ def cleanse_number(raw_string):
     return: Decimal number "2,001,140.28"
     '''
     number_string = re.sub(r'[^\d.]', '',raw_string)
-    number_decimal = Decimal(number_string)
+    number_decimal = float(number_string)
     return number_decimal
 
 def track_actual_changes(transaction_records, actual_balance):

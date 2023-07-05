@@ -3,6 +3,48 @@
 
 {% block content %}
 <div id="transactionlabeling_view">
-
+    <div style="display: none;" ref="ssp">{{transaction_data}}</div>
+    <div class="relative overflow-x-auto">
+        <v-table 
+          density="compact" 
+          class="w-full text-sm text-left text-gray-500 dark:text-gray-400"
+        >
+            <thead class="text-xs text-gray-900 dark:text-gray-400">
+                <tr >
+                    <th v-for="header in headers" :key="header.key" scope="col" class="px-6 py-3 font-medium text-black-900 whitespace-nowrap dark:text-white">
+                        {{ header.title }}
+                    </th>
+                </tr>
+            </thead>
+            <tbody >
+                <tr v-for="item in cached_items" :key="item.key" class="bg-white dark:bg-gray-800">
+                    <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                        {{ item.info }}
+                    </td>
+                    <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                        Rp.{{ item.amount }}
+                    </td>
+                    <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                        {{ item.date }}
+                    </td>
+                    <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                        {{ item.entry }}
+                    </td>
+                    <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                        {{ item.info }}
+                    </td>
+                    <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                        {{ item.details }}
+                    </td>
+                    <td width="100px">
+                      <v-select
+                        label="Select"
+                        :items="['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming']"
+                        variant="solo-filled"
+                      ></v-select>
+                    </td>
+                </tr>
+            </tbody>
+        </v-table>
 </div>
 {% endblock content %}
