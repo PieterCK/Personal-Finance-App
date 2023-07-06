@@ -3,8 +3,10 @@
       <v-table 
         density="compact" 
         class="w-full text-sm text-left text-gray-500 dark:text-gray-400"
+        fixed-header
+          height="400px"
       >
-          <thead class="text-xs text-gray-900 dark:text-gray-400">
+          <thead  class="text-m text-gray-900 dark:text-gray-400">
               <tr >
                   <th v-for="header in headers" :key="header.key" scope="col" class="px-6 py-3 font-medium text-black-900 whitespace-nowrap dark:text-white">
                       {{ header.title }}
@@ -12,35 +14,39 @@
               </tr>
           </thead>
           <tbody >
-              <tr v-for="item in cached_items" :key="item.key" class="bg-white dark:bg-gray-800">
-                  <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+              <tr v-for="item in paginatedItems" :key="item.key" class="bg-white dark:bg-gray-800">
+                  <td  scope="row" class="px-2 font-small text-gray-900 whitespace-nowrap dark:text-white">
                       {{ item.info }}
                   </td>
-                  <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                  <td  scope="row" class="px-1 py-1 font-small text-gray-900 whitespace-nowrap dark:text-white">
                       Rp.{{ item.amount }}
                   </td>
-                  <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                  <td  scope="row" class="px-1 py-1 font-small text-gray-900 whitespace-nowrap dark:text-white">
                       {{ item.date }}
                   </td>
-                  <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                  <td  scope="row" class="px-1 py-1 font-small text-gray-900 whitespace-nowrap dark:text-white">
                       {{ item.entry }}
                   </td>
-                  <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                  <td  scope="row" class="px-1 py-1 font-small text-gray-900 whitespace-nowrap dark:text-white">
                       {{ item.info }}
                   </td>
-                  <td  scope="row" class="px-6 py-4 font-small text-gray-900 whitespace-nowrap dark:text-white">
+                  <td  scope="row" class="px-1 py-1 font-small text-gray-900 whitespace-wrap dark:text-white">
                       {{ item.details }}
                   </td>
                   <td width="100px">
-                    <v-select
-                      label="Select"
-                      :items="['California', 'Colorado', 'Florida', 'Georgia', 'Texas', 'Wyoming']"
-                      variant="solo-filled"
-                    ></v-select>
+                    <select data-te-select-init
+                    >
+                      <option v-for="category in categories" :key="category.key">{{category.name}}</option>
+                    </select>
                   </td>
               </tr>
           </tbody>
       </v-table>
+      <v-pagination
+        v-model="page"
+        :length="4"
+        rounded="circle"
+      ></v-pagination>
     </div>
       </template>
      
@@ -75,10 +81,31 @@
                 details: 'Beli Makan'
               }
             ],
+            categories:[
+              {
+                key:"food", 
+                name:"Food"
+              },
+              {key:"entertainment", name:"Entertainment"},
+              {key:"transport", name:"Transport"}
+            ],
+            page:1,
+            pageSize: 10
           }
         },
         props:{
             cached_items:null
+        },
+        computed:{
+          paginatedItems() {
+            console.log("CAHCED ITEM: ", this.cached_items)
+            const startIndex = (this.page - 1) * this.pageSize;
+            const endIndex = startIndex + this.pageSize;
+            if (this.cached_items){
+              return this.cached_items.slice(startIndex, endIndex)
+            }
+              return null
+          },
         },
         methods:{
           getCachedTransactions(){
