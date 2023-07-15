@@ -1484,10 +1484,6 @@ input:checked + .toggle-bg {
   overflow: hidden;
 }
 
-.overflow-x-auto {
-  overflow-x: auto;
-}
-
 .\!whitespace-nowrap {
   white-space: nowrap !important;
 }
@@ -1716,11 +1712,6 @@ input:checked + .toggle-bg {
   padding-right: 1.25rem;
 }
 
-.px-6 {
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-}
-
 .px-8 {
   padding-left: 2rem;
   padding-right: 2rem;
@@ -1746,11 +1737,6 @@ input:checked + .toggle-bg {
   padding-bottom: 0.75rem;
 }
 
-.py-4 {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-}
-
 .pl-3 {
   padding-left: 0.75rem;
 }
@@ -1763,16 +1749,16 @@ input:checked + .toggle-bg {
   padding-top: 0.5rem;
 }
 
-.text-left {
-  text-align: left;
-}
-
 .text-center {
   text-align: center;
 }
 
 .-indent-\[999px\] {
   text-indent: -999px;
+}
+
+.font-\[\'Open_Sans\'\] {
+  font-family: 'Open Sans';
 }
 
 .text-2xl {
@@ -1803,11 +1789,6 @@ input:checked + .toggle-bg {
 .text-xl {
   font-size: 1.25rem;
   line-height: 1.75rem;
-}
-
-.text-xs {
-  font-size: 0.75rem;
-  line-height: 1rem;
 }
 
 .font-bold {
