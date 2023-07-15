@@ -7,8 +7,13 @@ from django.urls import reverse
 from django.http import FileResponse, JsonResponse
 from django.core.cache import cache
 import PyPDF2
+import json
+from django.db.models import DateTimeField, F
+from collections import defaultdict
+from django.db.models.functions import ExtractMonth, ExtractYear
 
-from .models import User, StatementParser
+
+from .models import User, StatementParser, TransactionRecord
 from .forms import BankstatementForm, BankstatementDiagnoseForm
 from .statement_processor import process_bankstatement
 from .utils import highlight_pdf, handle_file
@@ -18,9 +23,9 @@ from json import dumps
 def login_view(request):
     if request.method == "POST":
         # Attempt to sign user in
-        email = request.POST["email"]
+        username = request.POST["username"]
         password = request.POST["password"]
-        user = authenticate(request, email=email, password=password)
+        user = authenticate(request, username=username, password=password)
         # Check if authentication successful
         if user is not None:
             login(request, user)
@@ -88,10 +93,27 @@ class BankstatementView(View):
 
     def get(self, request):
         CONTEXT={
-            "form": BankstatementForm(),
-            "diagnose_form": BankstatementDiagnoseForm(),
-            "show_pdf": None
         }
+        # Retrieve all unique months and years
+        months_and_years = TransactionRecord.objects.annotate(
+            month=ExtractMonth('date'),
+            year=ExtractYear('date')
+        ).values('month', 'year').distinct()
+
+        # Organize the months by year in a dictionary
+        months_by_year = defaultdict(list)
+
+        # Loop through the months and years
+        for entry in months_and_years:
+            month = entry['month']
+            year = entry['year']
+            # Append the month to the corresponding year
+            months_by_year[year].append(month)
+
+        # Print the dictionary
+        for year, months in months_by_year.items():
+            print(f"{year}: {months}")
+
         cache.delete('output_pdf_bytes')
 
         if cache.get('original_pdf'):
@@ -106,7 +128,10 @@ def process_bankstatement_api(request):
         uploaded_pdf = request.FILES.get('uploaded_file')
         bank_code = request.POST.get('bank')
         input_value = request.POST.get('input_value')
-
+        period = {
+            "month": request.POST.get('month'),
+            "year": request.POST.get('year')
+        }
         if input_value and cache.get('original_pdf'):
             input_value = input_value.split(',')
             original_pdf_info = cache.get('original_pdf')
@@ -125,7 +150,7 @@ def process_bankstatement_api(request):
 
         # Process uploaded PDF file
         reader = PyPDF2.PdfReader(file_object)
-        transaction_data = process_bankstatement(bank_code, reader, input_value)
+        transaction_data = process_bankstatement(bank_code, reader, input_value, period)
 
         if not transaction_data['is_correct_pdf']:
             RESPONSE["message"] = "Couldn't Load PDF! Please make sure you're uploading the right PDF file or have selected the correct bank"
@@ -153,14 +178,19 @@ def process_bankstatement_api(request):
 
 @method_decorator(login_required, name='dispatch')
 class TransactionLabelingView(View):
+    def prepare_data_for_view(self, transaction_data):
+        for transaction in transaction_data:
+            transaction["select"] = 0
+        return transaction_data
+    
     def get(self, request):
         CONTEXT= {}
         CONTEXT['transaction_data']="transaction_data"
         transaction_data = cache.get("transaction_data")
-        print("TRANSACTION DATA: ", transaction_data)
         if transaction_data:
-            CONTEXT['transaction_data']=transaction_data['transactions']
-        return render(request, "ExpenseTracker/transaction_labeling.html", CONTEXT)   
+            print(transaction_data['transactions'][0])
+            CONTEXT['server_data']= json.dumps(self.prepare_data_for_view(transaction_data['transactions']))
+        return render(request, "ExpenseTracker/transaction_labeling.html", CONTEXT)
 
 @login_required
 def statement_parser(request):

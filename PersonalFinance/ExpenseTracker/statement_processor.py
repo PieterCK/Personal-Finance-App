@@ -3,6 +3,7 @@ from typing import List
 from .models import StatementParser, TransactionRecord
 from .utils import process_raw_pages, clean_transaction_details, cleanse_number, track_actual_changes, highlight_pdf
 import json
+from datetime import date
 
 
 def verify_pdf_is_bank_statement(parsed_pages ,parse_value):
@@ -18,7 +19,7 @@ def verify_pdf_is_bank_statement(parsed_pages ,parse_value):
     else:
         return True
     
-def process_bca_statement(parsed_pages, trash_value, parse_value):
+def process_bca_statement(parsed_pages, trash_value, parse_value, period = None):
     statement_transactions = []
     stated_balance = {}
     actual_balance = {
@@ -32,8 +33,13 @@ def process_bca_statement(parsed_pages, trash_value, parse_value):
 
             # Identify and organize transaction informations
             if trf_date and current_page[i+2] in parse_value and current_page[i+1] == ' ':
+                day = int(current_page[i].split("/")[0])
+                month = int(current_page[i].split("/")[1])
+                year = int(period['year'])
+                date_string = f"{day:02d}-{month:02d}-{year:04d}"
+
                 transaction_records = {
-                    'date': current_page[i],
+                    'date': date_string,
                     'info': current_page[i+2]
                 }
                 dirty_transaction_details = current_page[i+3]  
@@ -123,7 +129,7 @@ def verify_processed_transactions(statement_transactions, stated_balance, actual
     else:
         return True, suspicious_transactions
 
-def process_bankstatement(bank_code, reader, input_value= None):
+def process_bankstatement(bank_code, reader, input_value= None, period = None):
     # Get additional input variable
     parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
     trash_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "trash_value").values()[0]['pattern'])
@@ -146,7 +152,7 @@ def process_bankstatement(bank_code, reader, input_value= None):
 
     # Process statement according to bank code
     if bank_code == "BCA":
-        statement_transactions, stated_balance, actual_balance = process_bca_statement(parsed_pages, trash_value, parse_value)
+        statement_transactions, stated_balance, actual_balance = process_bca_statement(parsed_pages, trash_value, parse_value, period)
     else:
         return
     

@@ -2,22 +2,21 @@
 {% load static %}
 
 {% block content %}
-
-<div class="page_view">
-    This is home page
-</div>
 <div id="bankstatement_view" class="bg-transparent">
-   
-</div>
-<div class="page_view" id="guide_view">
-    This is guide page
-</div>
-<div class="page_view" id="expensetracker_view">
-    This is expense tracker page
+    <input ref="server_data" value="{{server_data}}" type="hidden">
+    <p-d-f-preview-panel :pdf_url="pdf_url"></p-d-f-preview-panel>
+    <form @submit.prevent enctype="multipart/form-data">
+        <bankstatement-forms
+            @response="(msg) => handleResponse(msg)" 
+            @pdf="(url) => pdf_url = url" 
+            v-if="form === 'upload_form'"
+        ></bankstatement-forms>
+        <diagnose-form
+            @response="(msg) => handleResponse(msg)" 
+            :parse_values="parse_values"    
+            v-else-if="form === 'diagnose_form'" 
+        ><diagnose-form/>
+    </form>
+    {{registered_periods}}
 </div>
 {% endblock content %}
-
-{% block script %}
-<script src="{% static 'ExpenseTracker/ExpenseTracker.js' %}"></script>
-<script src="{% static 'ExpenseTracker/utils.js' %}"></script>
-{% endblock %}

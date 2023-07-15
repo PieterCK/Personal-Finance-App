@@ -1,19 +1,3 @@
-<template>
-    <PDFPreviewPanel :pdf_url="pdf_url"/>
-    <form @submit.prevent enctype="multipart/form-data">
-        <BankstatementForms 
-            @response="(msg) => handleResponse(msg)" 
-            @pdf="(url) => pdf_url = url" 
-            v-if="form === 'upload_form'"
-        />
-        <DiagnoseForm
-            @response="(msg) => handleResponse(msg)" 
-            :parse_values="parse_values"    
-            v-else-if="form === 'diagnose_form'" 
-        />
-    </form>
-</template>
-
 <script>
 import BankstatementForms from './BankstatementForms.vue';
 import DiagnoseForm from './DiagnoseForm.vue';
@@ -33,7 +17,8 @@ export default {
             is_valid: true,
             pdf_url:"",
             transaction_data:"",
-            parse_values:[]
+            parse_values:[],
+            registered_periods: null
         }
     },
     watch: {
@@ -51,7 +36,18 @@ export default {
         handleResponse(msg){
             this.is_valid = msg.transaction_data.is_valid
             this.parse_values = msg.transaction_data.parse_value
+        },
+        readServerData(){
+            let input_value = this.$refs.server_data.value
+            if (input_value){
+                const registered_periods = JSON.parse(input_value)
+                this.registered_periods = registered_periods
+                this.$refs.server_data.value = null
+            }
         }
-    }
+    },
+    mounted(){
+      this.$refs.server_data ? this.readServerData(): null
+  }
 }
 </script>

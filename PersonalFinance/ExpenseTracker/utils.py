@@ -67,7 +67,8 @@ def clean_transaction_details(transaction_records, trash_value, dirty_transactio
     return: Details without trash values, new lines, extra spaces, random numbers. Only words
     '''
     for value in transaction_records.values():
-        trash_value.append(value)
+        if type(value) == str:
+            trash_value.append(value)
     separators = '|'.join(trash_value)
 
     tmp = " ".join(re.split(separators, dirty_transaction_details)).strip()
