@@ -8,6 +8,15 @@
         <option>BNI</option>
         <option>BTPN</option>
     </select>
+    <label for="month" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Month</label>
+    <select v-model="month" id="month" name="month" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500">
+      <option v-for="month in months" :key="month.key">{{month.name}}</option>
+  </select>
+  <label for="year" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Year</label>
+  <select v-model="year" id="year" name="year" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500">
+    <option v-for="year in showYears" :key="year.key">{{year.name}}</option>
+  </select>
+
     <button @click="submitForm" type="submit" class="text-white mt-2 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">Extract Transactions</button>
 </template>
 
@@ -20,8 +29,36 @@ export default {
     return {
       file: null,
       bank_code: null,
+      months: [
+        { key: "january", name: "January" },
+        { key: "february", name: "February" },
+        { key: "march", name: "March" },
+        { key: "april", name: "April" },
+        { key: "may", name: "May" },
+        { key: "june", name: "June" },
+        { key: "july", name: "July" },
+        { key: "august", name: "August" },
+        { key: "september", name: "September" },
+        { key: "october", name: "October" },
+        { key: "november", name: "November" },
+        { key: "december", name: "December" },
+      ],
+      month: null,
+      year: null
       
     };
+  },
+  computed:{
+    showYears() {
+    let currentYear = new Date().getFullYear();
+    let yearSelections = [];
+
+    for (let i = 0; i < 8; i++) {
+      let year = currentYear - i;
+      yearSelections.push({ key: year, name: year.toString() });
+    }
+    return yearSelections;
+  }
   },
   emits: ['response','pdf'],
   methods: {
@@ -49,7 +86,9 @@ export default {
 
         formData.append('uploaded_file', this.file);
         formData.append('bank', this.bank_code);
-
+        formData.append('month', this.month)
+        formData.append('year', this.year)
+        
         axios.post(bankStatementUrl, formData)
         .then(response => {
             // Process the response data

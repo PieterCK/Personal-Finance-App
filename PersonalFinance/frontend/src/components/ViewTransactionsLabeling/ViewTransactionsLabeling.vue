@@ -7,7 +7,7 @@ export default {
   
   data(){
     return{
-      cached_items:null
+      cached_items:null,
     }
   },
   components:{
@@ -16,10 +16,11 @@ export default {
   methods:{
     readServerData(){
       let input_value = this.$refs.server_data.value
-      console.log("input value: ", input_value)
-      const cached_items = JSON.parse(input_value)
-      this.cached_items = cached_items
-      this.$refs.server_data.value = null
+      if (input_value){
+        const cached_items = JSON.parse(input_value)
+        this.cached_items = cached_items
+        this.$refs.server_data.value = null
+      }
     },
     getCachedTransactions(){
             axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
