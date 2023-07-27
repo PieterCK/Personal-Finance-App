@@ -83,7 +83,8 @@ def process_bca_statement(parsed_pages, trash_value, parse_value, period = None)
                 actual_balance = track_actual_changes(transaction_records, actual_balance)
 
                 # Compile statement transaction
-                statement_transactions.append(transaction_records)
+                if transaction_records["info"] != "SALDO AWAL":
+                    statement_transactions.append(transaction_records)
 
     return statement_transactions, stated_balance, actual_balance
 

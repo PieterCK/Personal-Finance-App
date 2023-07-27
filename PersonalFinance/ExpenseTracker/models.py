@@ -36,6 +36,7 @@ class TransactionRecord(models.Model):
         ('CREDIT', 'Credit'),
         ('DEBIT', 'Debit')
     )
+    transaction_id = models.AutoField(primary_key=True)
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name="transactions_history", blank=True, null=True)
     date = models.DateField(auto_now = False, auto_now_add= False)
     entry = models.CharField(max_length=6, choices=TRANSACTION_TYPES)
@@ -50,6 +51,7 @@ class TransactionRecord(models.Model):
     
 class Dashboard(models.Model):
     is_preset = models.BooleanField()
+    dashboard_id = models.AutoField(primary_key=True)
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name='custom_dashboard')
     dashboard_name = models.CharField(max_length=255)
     dashboard_info = models.TextField()

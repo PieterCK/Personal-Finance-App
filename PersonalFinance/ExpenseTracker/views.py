@@ -8,17 +8,19 @@ from django.http import FileResponse, JsonResponse
 from django.core.cache import cache
 import PyPDF2
 import json
-from django.db.models import DateTimeField, F
+from django.db.models import Q 
 from collections import defaultdict
 from django.db.models.functions import ExtractMonth, ExtractYear
-
-
+from .models import AccountCategory
+from django.http import JsonResponse
+from datetime import datetime
 from .models import User, StatementParser, TransactionRecord
-from .forms import BankstatementForm, BankstatementDiagnoseForm
 from .statement_processor import process_bankstatement
 from .utils import highlight_pdf, handle_file
 from django.views import View
 from json import dumps
+from django.core import serializers
+
 # Create your views here.
 def login_view(request):
     if request.method == "POST":
@@ -90,7 +92,6 @@ def index(request):
 
 @method_decorator(login_required, name='dispatch')
 class BankstatementView(View):
-
     def get(self, request):
         CONTEXT={
         }
@@ -119,6 +120,85 @@ class BankstatementView(View):
         if cache.get('original_pdf'):
             CONTEXT["show_pdf"] = 'original'
         return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
+
+@method_decorator(login_required, name='dispatch')
+class CRUDBankstatementAPI(View):
+    def process_request_data(data, request):
+        current_user = request.user.id
+        pin = data.pin
+        response = {}
+
+        if current_user != data.user_id:
+            response = {
+                "status": 400,
+                "error": ValueError,
+                "message": "Request user is not logged in user"
+            }
+            return False, JsonResponse(response)
+        
+        user = authenticate(request, username=data.user_id, password=pin)
+        if user is None:
+            response = {
+                "status": 400,
+                "error": ValueError,
+                "message": "Wrong password"
+            }
+            return False, JsonResponse(response)
+        return True, True
+
+    def cached_transactions(data, request):
+        return
+    
+    def get(self, request):
+        data = request.GET
+        valid, response =self.process_request_data(data, request)
+        if not valid:
+            return response
+
+        for period in [data.start_period, data.end_period]:
+            period_day, period_month, period_year = period.split("-")
+            print("Period: ", period_day, period_month, period_year)
+            try:
+                period_date = datetime(int(period_year), int(period_month), int(period_day))
+            except ValueError:
+                response = {
+                    "status": 400,
+                    "error": "ValueError",
+                    "message": "Invalid date format in period: {}".format(period)
+                }
+                return JsonResponse(response)    
+            
+        start_period = datetime(int(data.start_period.split("-")[2]), int(data.start_period.split("-")[1]), int(data.start_period.split("-")[0]))
+        end_period = datetime(int(data.end_period.split("-")[2]), int(data.end_period.split("-")[1]), int(data.end_period.split("-")[0]))
+        
+        transactions = TransactionRecord.objects.filter(user__username='USER', date__range=[start_period, end_period])
+        
+        if not transactions.exists():
+            response = {
+                "status": 400,
+                "error": "ValueError",
+                "message": "Unable to find records from {} to {}, make sure you've entered the correct range".format(start_period, end_period)
+            }
+            return JsonResponse(response)
+        else:
+            serialized_transactions = serializers.serialize('json', transactions)
+            response_data = {
+                "status": 200,
+                "data": serialized_transactions,
+            }
+            return JsonResponse(response_data)
+
+    
+    def post(self, request):
+        data = request.GET
+        valid, response =self.process_request_data(data, request)
+        if not valid:
+            return response
+        
+        return
+    
+    def put(self, request):
+        return
 
 @login_required
 def process_bankstatement_api(request):
@@ -179,17 +259,27 @@ def process_bankstatement_api(request):
 @method_decorator(login_required, name='dispatch')
 class TransactionLabelingView(View):
     def prepare_data_for_view(self, transaction_data):
-        for transaction in transaction_data:
-            transaction["select"] = 0
-        return transaction_data
+        modified_transactions = []
+        for idx, transaction in enumerate(transaction_data):
+            transaction["select"]= 0
+            transaction["account_type"]= None
+            transaction["key"]= idx
+            transaction["error"] = False
+            modified_transactions.append(transaction)
+        return modified_transactions
     
     def get(self, request):
         CONTEXT= {}
-        CONTEXT['transaction_data']="transaction_data"
+        user = User.objects.get(pk=request.user.id)
+        preset_account_types = AccountCategory.objects.filter(is_preset=True).values_list('account_type', flat=True)
+        user_account_types = AccountCategory.objects.filter(user=user).values_list('account_type', flat=True)
+        
+        preset_account_types_list = list(preset_account_types)
+        user_account_types_list = list(user_account_types)
+        CONTEXT['account_types'] = json.dumps(preset_account_types_list + user_account_types_list)
         transaction_data = cache.get("transaction_data")
-        if transaction_data:
-            print(transaction_data['transactions'][0])
-            CONTEXT['server_data']= json.dumps(self.prepare_data_for_view(transaction_data['transactions']))
+        CONTEXT['transactions'] = json.dumps(self.prepare_data_for_view(transaction_data['transactions'])) if transaction_data else None
+        
         return render(request, "ExpenseTracker/transaction_labeling.html", CONTEXT)
 
 @login_required
@@ -202,18 +292,6 @@ def statement_parser(request):
         input_value = request.POST.get('input_value').split(',')
         for value in input_value:
             StatementParser.objects.create(value=value)
-
-@login_required
-def parsed_transactions_view(request):
-    if request.method == "GET":
-        if cache.get('transaction_data'):
-            transaction_data = cache.get('transaction_data')
-            return render(request, "ExpenseTracker/bankstatement_parsed.html", {"transaction_data": transaction_data})
-        else:
-            CONTEXT = {
-                "error_msg": "Please Retry Parsing Your Bank Statement"
-            }
-            return render(request,  "ExpenseTracker/bankstatement_parsed.html", CONTEXT)
 
 @login_required
 def display_pdf(request, pdf_type="original"):

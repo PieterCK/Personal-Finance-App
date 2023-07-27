@@ -6,37 +6,29 @@
   shaped
   elevation="24"
 >
-  <div class="text-center ">
-    <v-dialog
-      v-model="dialog"
-      width="auto"
-    >
-      <v-card width="420px">
-        <v-container>
-          <v-card-title>
-            <span color="yellow" class="text-h6">We got new transactions!</span>
-          </v-card-title>
-        </v-container>
-        <v-card-text>
-          Looks like you just uploaded a bankstatement, want to label transactions from that bankstatement?
-        </v-card-text>
-          <v-container>
-            <v-row justify="center" align="center">
-              <v-col cols="auto">
-                <v-btn density="compact" color="primary" block @click="getCachedTransactions">Yes</v-btn>
-              </v-col>
-              <v-col cols="auto">
-                <v-btn density="compact" color="grey" block @click="dialog = false">No</v-btn>
-              </v-col>
-            </v-row>
-          </v-container>
-      </v-card>
-    </v-dialog>
-  </div>
+<SnackBar
+  ref="errorSnackbar"
+></SnackBar>
 
+<YesNoModal
+  ref="loadCachedItemModal"
+  @response="(msg) => msg ? this.getCachedTransactions():"
+></YesNoModal>
+
+<TableHeaderCard
+  @response="(msg) => msg?this.validateForm():null"
+  :isLoading = "this.tableIsLoading"
+></TableHeaderCard>
+
+<WarningModal
+  
+></WarningModal>
+
+  <v-divider></v-divider>
+  
   <div class="relative overflow-x-auto shadow-md sm:rounded-xl">
     <v-table 
-      density="compact" 
+      density="compact"
       fixed-header
       fixed-footer
       hover
@@ -91,8 +83,9 @@
               <td >
                   <select data-te-select-init 
                     class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  >
-                    <option v-for="category in categories" :key="category.key">{{category.name}}</option>
+                    v-model="item.account_type"
+                    >
+                    <option v-for="category in categories" :key="category.key" :value="category.name">{{category.name}}</option>
                   </select>
               </td>
               <td scope="row" class="text-center px-1 py-1 font-small text-gray-900 whitespace-nowrap dark:text-white">
@@ -112,9 +105,21 @@
 <script>
   import axios from 'axios';
   import Cookies from 'js-cookie';
+
+  import YesNoModal from '../YesNoModal.vue';
+  import TableHeaderCard from '../TableHeaderCard.vue';
+  import SnackBar from '../SnackBar.vue';
+  import WarningModal from '../WarningModal.vue';
+
   const baseUrl = process.env.VUE_APP_BASE_URL;
 
   export default {
+    components:{
+      YesNoModal,
+      TableHeaderCard,
+      SnackBar,
+      WarningModal
+    },
     data () { 
       return {
         attrs:{
@@ -123,6 +128,7 @@
           elevation: 2,
         },
         dialog:false,
+        formIsValid:true,
         headers:[
           {
             title:'Transaction',
@@ -136,26 +142,48 @@
           {title:'Category', align:'start', sortable:true, key:"category"},
           {title:'Status', align:'start', sortable:true, key:"status"},
         ],
-        items:false,
-        categories:[
-          {
-            key:"food", 
-            name:"Food"
-          },
-          {key:"entertainment", name:"Entertainment"},
-          {key:"transport", name:"Transport"}
-        ],
+        items:[],
+        categories:[],
         selectAll:false,
+        yesNoModalObj:{
+          trigger:false,
+          dialog:{
+            title: "New Transactions",
+            text: "Looks like you just uploaded a bankstatement, want to label transactions from that bankstatement?"
+          }
+        },
+        snackBarObj:{
+          trigger:false,
+          dialog:"Please select and label transactions first!",
+        },
+        tableIsLoading:false
       }
     },
     props:{
-        cached_items:null
+        cached_items:null,
+        account_types:null
     },
     methods:{
       getTransaction(){
         axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
         const getTransactionsUrl = `${baseUrl}transactions`
         axios.get(getTransactionsUrl)
+        .then(response => {
+            // Process the response data
+            return response.data
+        })
+        .catch(error => {
+            // Handle any error that occurs
+            console.error(error);
+        });
+      },
+      postTransactions(){
+        axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
+        const CRUDBankstatementAPI = `${baseUrl}CRUDBankstatementAPI`
+        const formData = new FormData();
+
+        formData.append('input_value', this.input_values);
+        axios.post(CRUDBankstatementAPI)
         .then(response => {
             // Process the response data
             let data = response.data
@@ -179,12 +207,54 @@
       formatPrice(value) {
         let val = (value/1).toFixed(2).replace('.', ',')
         return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+      },
+      processCategorySelect(account_types){
+        let categories = [{key:null, name:null}]
+        account_types.forEach(category=> 
+          categories.push({
+              key:category, 
+              name:category
+          })
+        )
+        this.categories = categories
+      },
+      validateForm(){
+        this.tableIsLoading = true
+        let safeToSubmit = true
+        let selectedTransactions = []
+
+        const NO_ITEM_SELECTED = this.items.filter((item)=>item.select).length < 1
+        const NO_ITEM = this.items.length < 1
+        if (NO_ITEM || NO_ITEM_SELECTED){
+          this.$refs.errorSnackbar.popSnackBar("Please Selecet or Load Transactions First!")
+          this.tableIsLoading = false
+        }
+        
+        this.items.forEach((item)=>{
+          if (item.select){
+            selectedTransactions.push(items)
+            item.error = !item.account_type
+            safeToSubmit = item.account_type
+          }
+        })
+        
+        if (!safeToSubmit){
+          this.$refs.errorSnackbar.popSnackBar("Please Complete Labeling Your Transactions")
+          this.tableIsLoading = false
+        }
+        
+        if (selectedTransactions.length() < this.items.length() && safeToSubmit){
+          this.$validationModal.toggleModal(true)
+        } else {
+
+        }
+
+
       }
     },
-    watch:{
-      cached_items(cached_items){
-        cached_items ? this.dialog = true : this.dialog = false
-      },
+    mounted(){
+      this.cached_items ? this.$refs.loadCachedItemModal.toggleModal(true):
+      this.processCategorySelect(this.account_types)
     }
   }
 </script>

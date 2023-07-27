@@ -2,8 +2,11 @@
 {% load static %}
 
 {% block content %}
-<div id="transactionlabeling_view">
-    <transactions-table :cached_items="cached_items"></transactions-table>
-    <input ref="server_data" value="{{server_data}}" type="hidden">
+<div id="transactionlabeling_view"
+>
+    <transactions-table 
+    :cached_items = "{{transactions}}"
+    :account_types = "{{account_types}}"
+    ></transactions-table>
 </div>
 {% endblock content %}
