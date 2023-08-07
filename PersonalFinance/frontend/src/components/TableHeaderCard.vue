@@ -2,7 +2,7 @@
   <v-card
     title="Transaction Labeling"
     max-height="144"
-    :loading = "isLoading"
+    :loading="isLoading"
     class="rounded-none"
     variant="flat"
   >

@@ -44,14 +44,10 @@ export default {
         this.title = messageObj.title
         this.text = messageObj.text
         this.popup = true
-
-        return new Promise((resolve) => {
-          this.resolveFunc = resolve;
-        });
       },
       handleResp(resp) {
         this.popup = false;
-        this.resolveFunc(resp);
+        this.$emit('response', resp);
       }
     }
 }

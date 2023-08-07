@@ -190,10 +190,11 @@ class CRUDBankstatementAPI(View):
 
     
     def post(self, request):
-        data = request.GET
-        valid, response =self.process_request_data(data, request)
-        if not valid:
-            return response
+        data = request.POST
+        valid, response = self.process_request_data(data, request)
+        if not valid :return response
+        
+        print(data)
         
         return
     

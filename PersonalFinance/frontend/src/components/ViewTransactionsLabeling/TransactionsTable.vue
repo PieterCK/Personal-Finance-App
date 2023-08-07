@@ -12,17 +12,19 @@
 
 <YesNoModal
   ref="loadCachedItemModal"
-  @response="(msg) => msg ? this.getCachedTransactions():"
+  @response="(msg) => msg?this.getCachedTransactions():null"
 ></YesNoModal>
 
 <TableHeaderCard
   @response="(msg) => msg?this.validateForm():null"
-  :isLoading = "this.tableIsLoading"
+  :isLoading="this.tableIsLoading"
 ></TableHeaderCard>
 
-<WarningModal
-  
-></WarningModal>
+<YesNoModal
+  ref="confirmSubmissionModal"
+  @response="(msg)=>msg?this.postTransactions():null"
+>
+</YesNoModal>
 
   <v-divider></v-divider>
   
@@ -45,7 +47,7 @@
                   value=""
                   aria-label="..."
                   v-model="selectAll" 
-                  @change = "toggleAllCheckboxes"
+                  @change="toggleAllCheckboxes"
                   />
               </th>
               <th v-for="header in headers" :key="header.key" scope="col" class="px-6 py-3 font-medium text-black-900 whitespace-nowrap dark:text-white">
@@ -109,7 +111,6 @@
   import YesNoModal from '../YesNoModal.vue';
   import TableHeaderCard from '../TableHeaderCard.vue';
   import SnackBar from '../SnackBar.vue';
-  import WarningModal from '../WarningModal.vue';
 
   const baseUrl = process.env.VUE_APP_BASE_URL;
 
@@ -118,7 +119,6 @@
       YesNoModal,
       TableHeaderCard,
       SnackBar,
-      WarningModal
     },
     data () { 
       return {
@@ -197,7 +197,6 @@
       },
       getCachedTransactions(){
         this.items = this.cached_items
-        this.dialog = false
       },
       toggleAllCheckboxes() {
         this.items.forEach(item => {
@@ -216,11 +215,12 @@
               name:category
           })
         )
+        console.log(this.categories)
         this.categories = categories
       },
       validateForm(){
         this.tableIsLoading = true
-        let safeToSubmit = true
+        let safeToSubmit = false
         let selectedTransactions = []
 
         const NO_ITEM_SELECTED = this.items.filter((item)=>item.select).length < 1
@@ -228,11 +228,12 @@
         if (NO_ITEM || NO_ITEM_SELECTED){
           this.$refs.errorSnackbar.popSnackBar("Please Selecet or Load Transactions First!")
           this.tableIsLoading = false
+          return
         }
         
         this.items.forEach((item)=>{
           if (item.select){
-            selectedTransactions.push(items)
+            selectedTransactions.push(item)
             item.error = !item.account_type
             safeToSubmit = item.account_type
           }
@@ -242,18 +243,27 @@
           this.$refs.errorSnackbar.popSnackBar("Please Complete Labeling Your Transactions")
           this.tableIsLoading = false
         }
-        
-        if (selectedTransactions.length() < this.items.length() && safeToSubmit){
-          this.$validationModal.toggleModal(true)
-        } else {
-
+        else if (selectedTransactions.length < this.items.length && safeToSubmit){
+          this.$refs.confirmSubmissionModal.toggleModal({
+            "title":"Confirm Submission!",
+            "text":"You haven't selected all of the items yet! Are you sure you want to submit the selected items?"
+          })
+        } 
+        else{
+          this.$refs.confirmSubmissionModal.toggleModal({
+            "title":"Confirm Submission!",
+            "text":"Looks good! Click 'yes' to save."
+          })
         }
 
 
       }
     },
     mounted(){
-      this.cached_items ? this.$refs.loadCachedItemModal.toggleModal(true):
+      this.cached_items ? this.$refs.loadCachedItemModal.toggleModal({
+        "title":"New Transactions",
+        "text":"Would you like to load and label the newly uploaded transactions?"
+      }):null
       this.processCategorySelect(this.account_types)
     }
   }
