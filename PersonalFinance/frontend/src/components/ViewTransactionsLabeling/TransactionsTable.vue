@@ -143,6 +143,7 @@
           {title:'Status', align:'start', sortable:true, key:"status"},
         ],
         items:[],
+        selectedItems:[],
         categories:[],
         selectAll:false,
         yesNoModalObj:{
@@ -179,19 +180,19 @@
       },
       postTransactions(){
         axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
-        const CRUDBankstatementAPI = `${baseUrl}CRUDBankstatementAPI`
-        const formData = new FormData();
-
-        formData.append('input_value', this.input_values);
-        axios.post(CRUDBankstatementAPI)
+        const CRUDBankstatementAPI = `${baseUrl}bankstatement/api/CRUDBankstatementAPI`
+        
+        axios.post(CRUDBankstatementAPI, this.selectedItems)
         .then(response => {
             // Process the response data
+            this.tableIsLoading = false
             let data = response.data
-            console.log(data)
+            
             return data
         })
         .catch(error => {
             // Handle any error that occurs
+            this.tableIsLoading = false
             console.error(error);
         });
       },
@@ -215,13 +216,12 @@
               name:category
           })
         )
-        console.log(this.categories)
         this.categories = categories
       },
       validateForm(){
         this.tableIsLoading = true
         let safeToSubmit = false
-        let selectedTransactions = []
+        this.selectedItems = []
 
         const NO_ITEM_SELECTED = this.items.filter((item)=>item.select).length < 1
         const NO_ITEM = this.items.length < 1
@@ -233,7 +233,7 @@
         
         this.items.forEach((item)=>{
           if (item.select){
-            selectedTransactions.push(item)
+            this.selectedItems.push(item)
             item.error = !item.account_type
             safeToSubmit = item.account_type
           }
@@ -243,7 +243,7 @@
           this.$refs.errorSnackbar.popSnackBar("Please Complete Labeling Your Transactions")
           this.tableIsLoading = false
         }
-        else if (selectedTransactions.length < this.items.length && safeToSubmit){
+        else if (this.selectedItems.length < this.items.length && safeToSubmit){
           this.$refs.confirmSubmissionModal.toggleModal({
             "title":"Confirm Submission!",
             "text":"You haven't selected all of the items yet! Are you sure you want to submit the selected items?"
@@ -255,8 +255,6 @@
             "text":"Looks good! Click 'yes' to save."
           })
         }
-
-
       }
     },
     mounted(){

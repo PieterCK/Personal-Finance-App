@@ -15,11 +15,13 @@ from .models import AccountCategory
 from django.http import JsonResponse
 from datetime import datetime
 from .models import User, StatementParser, TransactionRecord
-from .statement_processor import process_bankstatement
+from .statement_processor import process_bankstatement, submit_transactions
 from .utils import highlight_pdf, handle_file
 from django.views import View
 from json import dumps
 from django.core import serializers
+
+
 
 # Create your views here.
 def login_view(request):
@@ -123,9 +125,8 @@ class BankstatementView(View):
 
 @method_decorator(login_required, name='dispatch')
 class CRUDBankstatementAPI(View):
-    def process_request_data(data, request):
+    def process_request_data(self, data, request):
         current_user = request.user.id
-        pin = data.pin
         response = {}
 
         if current_user != data.user_id:
@@ -157,7 +158,6 @@ class CRUDBankstatementAPI(View):
 
         for period in [data.start_period, data.end_period]:
             period_day, period_month, period_year = period.split("-")
-            print("Period: ", period_day, period_month, period_year)
             try:
                 period_date = datetime(int(period_year), int(period_month), int(period_day))
             except ValueError:
@@ -190,13 +190,21 @@ class CRUDBankstatementAPI(View):
 
     
     def post(self, request):
-        data = request.POST
-        valid, response = self.process_request_data(data, request)
-        if not valid :return response
-        
-        print(data)
-        
-        return
+        data = json.loads(request.body)
+        print("data: ", data)
+        user = User.objects.get(pk=request.user.id)
+        statusObj = submit_transactions(user, data)
+        if statusObj['saved'] == statusObj['total']:        
+            return JsonResponse({
+                "status":200,
+                "message":"Data succesfully received and saved"
+            })
+        else:
+            return JsonResponse({
+                "status":400,
+                "message":"Only {0} / {1} data successfuly saved".format(statusObj['saved'], statusObj['total']),
+                "failure": statusObj['failure'],
+            })
     
     def put(self, request):
         return
@@ -238,11 +246,10 @@ def process_bankstatement_api(request):
             return JsonResponse(RESPONSE, safe=False)
 
         if transaction_data['is_valid']:
-            cache.set('transaction_data', transaction_data, timeout=300)
+            cache.set('transaction_data', transaction_data, timeout=900)
             RESPONSE['redir_url'] = 'labeling'
             return JsonResponse(RESPONSE, safe=False)
         else:
-            RESPONSE["message"] = "Aww man, Looks like there's imbalance between stated & parsed amount"
             RESPONSE["show_pdf"] = 'highlighted'
             if not uploaded_pdf:
                 original_pdf_info = cache.get('original_pdf')
@@ -254,7 +261,7 @@ def process_bankstatement_api(request):
 
         RESPONSE["transaction_data"] = transaction_data
 
-        response = JsonResponse(RESPONSE, safe=False)
+        response = JsonResponse(RESPONSE)
         return response
 
 @method_decorator(login_required, name='dispatch')

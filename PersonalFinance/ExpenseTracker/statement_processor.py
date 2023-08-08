@@ -62,6 +62,8 @@ def process_bca_statement(parsed_pages, trash_value, parse_value, period = None)
                 except IndexError:
                     transaction_records['amount'] = '-'
 
+                transaction_records['bank_code'] = 'BCA'
+
                 # Record stated balance changes
                 if "SALDO AKHIR" in dirty_transaction_details:
                     tmp_saldo_akhir = re.split('SALDO AKHIR', dirty_transaction_details)[1].split()
@@ -170,18 +172,34 @@ def process_bankstatement(bank_code, reader, input_value= None, period = None):
         "parse_value": parse_value
     }
 
-def submit_transactions(bank_code, statement_transactions):
-    # Insert statement_transactions into TransactionRecord model
-    # for transaction in statement_transactions:
-    #     TransactionRecord.objects.create(
-    #         user = 
-    #         date = transaction['date'],
-    #         entry = transaction['entry'],
-    #         amount = transaction['amount'],
-    #         info = transaction['info'],
-    #         account_type = 
-    #         bank =
-    #         details = transaction['details']
-    #     )
-    pass
+def submit_transactions(user,statement_transactions):
+    acknowledgement = {}
+    failure = []
+    for transaction in statement_transactions:
+        date = transaction['date'].split()[0]
+        transaction['date'] = datetime.strptime(date, "%d-%m-%Y")
+        try:
+            TransactionRecord.objects.create(
+                user = user
+                bank = transaction['bank_code'],
+                info = transaction['info'],
+                entry = transaction['entry'],
+                amount = transaction['amount'],
+                details = transaction['details'],
+                date = transaction['date'],
+                account_type = transaction['account_type']
+            )
+            pk = TransactionRecord.objects.filter(user = user).order_by('-pk')[0].pk
+            acknowledgement[pk] = transaction['info']+transaction['date']
+        except:
+            failure.push(transaction)
+            continue
+
+    return {
+        "saved": len(acknowledgement),
+        "failed": len(failure),
+        "total": len(statement_transactions),
+        "pk_map": acknowledgement,
+        "failure": failure
+    }
     
