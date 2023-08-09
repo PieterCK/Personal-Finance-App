@@ -11,16 +11,14 @@ import json
 from django.db.models import Q 
 from collections import defaultdict
 from django.db.models.functions import ExtractMonth, ExtractYear
-from .models import AccountCategory
 from django.http import JsonResponse
 from datetime import datetime
-from .models import User, StatementParser, TransactionRecord
+from .models import User, StatementParser, TransactionRecord, AccountCategory
 from .statement_processor import process_bankstatement, submit_transactions
 from .utils import highlight_pdf, handle_file
 from django.views import View
 from json import dumps
 from django.core import serializers
-
 
 
 # Create your views here.
@@ -191,18 +189,17 @@ class CRUDBankstatementAPI(View):
     
     def post(self, request):
         data = json.loads(request.body)
-        print("data: ", data)
         user = User.objects.get(pk=request.user.id)
         statusObj = submit_transactions(user, data)
         if statusObj['saved'] == statusObj['total']:        
             return JsonResponse({
                 "status":200,
-                "message":"Data succesfully received and saved"
+                "message":"Successfully saved {0} / {1} data".format(statusObj['saved'], statusObj['total']),
             })
         else:
             return JsonResponse({
                 "status":400,
-                "message":"Only {0} / {1} data successfuly saved".format(statusObj['saved'], statusObj['total']),
+                "message":"Only {0} / {1} data successfully saved".format(statusObj['saved'], statusObj['total']),
                 "failure": statusObj['failure'],
             })
     

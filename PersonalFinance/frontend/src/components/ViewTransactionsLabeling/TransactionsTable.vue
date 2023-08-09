@@ -9,25 +9,21 @@
 <SnackBar
   ref="errorSnackbar"
 ></SnackBar>
-
 <YesNoModal
   ref="loadCachedItemModal"
   @response="(msg) => msg?this.getCachedTransactions():null"
 ></YesNoModal>
-
-<TableHeaderCard
-  @response="(msg) => msg?this.validateForm():null"
-  :isLoading="this.tableIsLoading"
-></TableHeaderCard>
-
 <YesNoModal
   ref="confirmSubmissionModal"
   @response="(msg)=>msg?this.postTransactions():null"
 >
 </YesNoModal>
+<TableHeaderCard
+  @response="(msg) => msg?this.validateForm():null"
+  :isLoading="this.tableIsLoading"
+>
+</TableHeaderCard>
 
-  <v-divider></v-divider>
-  
   <div class="relative overflow-x-auto shadow-md sm:rounded-xl">
     <v-table 
       density="compact"
@@ -187,7 +183,7 @@
             // Process the response data
             this.tableIsLoading = false
             let data = response.data
-            
+            console.log(data)
             return data
         })
         .catch(error => {

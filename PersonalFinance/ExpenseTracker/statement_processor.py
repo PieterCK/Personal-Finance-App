@@ -1,10 +1,9 @@
 import re
 from typing import List
-from .models import StatementParser, TransactionRecord
+from .models import StatementParser, TransactionRecord, AccountCategory, Bank
 from .utils import process_raw_pages, clean_transaction_details, cleanse_number, track_actual_changes, highlight_pdf
 import json
-from datetime import date
-
+from datetime import date, datetime
 
 def verify_pdf_is_bank_statement(parsed_pages ,parse_value):
     matched_keyword = 0
@@ -176,23 +175,21 @@ def submit_transactions(user,statement_transactions):
     acknowledgement = {}
     failure = []
     for transaction in statement_transactions:
-        date = transaction['date'].split()[0]
-        transaction['date'] = datetime.strptime(date, "%d-%m-%Y")
         try:
             TransactionRecord.objects.create(
-                user = user
-                bank = transaction['bank_code'],
+                user = user,
+                bank = Bank.objects.filter(bank_code = transaction['bank_code']).get(),
                 info = transaction['info'],
                 entry = transaction['entry'],
                 amount = transaction['amount'],
                 details = transaction['details'],
-                date = transaction['date'],
-                account_type = transaction['account_type']
+                date = datetime.strptime(transaction['date'].split()[0], "%d-%m-%Y"),
+                account_type = AccountCategory.objects.filter(account_type = transaction['account_type']).get()
             )
             pk = TransactionRecord.objects.filter(user = user).order_by('-pk')[0].pk
             acknowledgement[pk] = transaction['info']+transaction['date']
         except:
-            failure.push(transaction)
+            failure.append(transaction)
             continue
 
     return {
