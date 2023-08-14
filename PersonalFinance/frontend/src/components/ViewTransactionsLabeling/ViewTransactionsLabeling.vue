@@ -4,10 +4,19 @@ import Cookies from 'js-cookie';
 const baseUrl = process.env.VUE_APP_BASE_URL;
 import TransactionsTable from './TransactionsTable.vue';
 import TableHeaderCard from '../TableHeaderCard.vue';
+import VueDatePicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css'
+
 export default {
+  data(){
+    return{
+      date:null
+    }
+  },
   components:{
     TransactionsTable,
-    TableHeaderCard
+    TableHeaderCard,
+    VueDatePicker
   },
   methods:{
     getCachedTransactions(){

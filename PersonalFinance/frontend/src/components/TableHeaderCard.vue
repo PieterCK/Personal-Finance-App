@@ -6,11 +6,18 @@
       <v-toolbar
         color="grey"
         height="50"
-      >  
-        <v-toolbar-title></v-toolbar-title>
-        
-        <v-spacer><VueDatePicker  v-model="date" range month-picker /></v-spacer>
-        
+      >          
+        <v-spacer></v-spacer>
+        <v-btn 
+        @click="this.sendResponse()"
+        class="text-white mr-2"
+        size="small"
+        icon
+        >
+        <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512" class="flex-shrink-0 w-5 h-5 text-gray-300 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" fill="currentColor">
+          <path d="M386.3 160H336c-17.7 0-32 14.3-32 32s14.3 32 32 32H464c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0s-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3s163.8-62.5 226.3 0L386.3 160z"/>
+        </svg>
+        </v-btn>
         <v-btn 
         @click="this.sendResponse()"
         class="text-white mr-4"
@@ -24,15 +31,7 @@
 </template>
 
 <script>
-import VueDatePicker from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/dist/main.css'
-
 export default { 
-  data(){
-    return{
-      date:null
-    }
-  },
   props:{
     isLoading: {
       type: Boolean,
@@ -44,7 +43,6 @@ export default {
     sendResponse(){
       this.$emit('response', true)
     }
-  },
-  components: { VueDatePicker }
+  }
 }
 </script>
