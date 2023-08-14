@@ -1,27 +1,38 @@
 <template>
-  <v-card
-    title="Transaction Labeling"
-    max-height="144"
+
+    <v-card
     :loading="isLoading"
-    class="rounded-none"
-    variant="flat"
-  >
-    <v-card-actions class="flex flex-row-reverse">
-      <div >
+    >
+      <v-toolbar
+        color="grey"
+        height="50"
+      >  
+        <v-toolbar-title></v-toolbar-title>
+        
+        <v-spacer><VueDatePicker  v-model="date" range month-picker /></v-spacer>
+        
         <v-btn 
-          @click="this.sendResponse()"
-          variant="flat"
-          class="text-white"
-          color="#5865f2"
-          size="small"
-        >Submit</v-btn>
-      </div>
-    </v-card-actions>
-  </v-card>
+        @click="this.sendResponse()"
+        class="text-white mr-4"
+        size="small"
+        >
+        Submit
+        </v-btn>
+      </v-toolbar>
+    </v-card>
+  
 </template>
 
 <script>
+import VueDatePicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css'
+
 export default { 
+  data(){
+    return{
+      date:null
+    }
+  },
   props:{
     isLoading: {
       type: Boolean,
@@ -33,6 +44,7 @@ export default {
     sendResponse(){
       this.$emit('response', true)
     }
-  }
+  },
+  components: { VueDatePicker }
 }
 </script>
