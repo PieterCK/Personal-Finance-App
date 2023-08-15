@@ -10,7 +10,8 @@ import '@vuepic/vue-datepicker/dist/main.css'
 export default {
   data(){
     return{
-      date:null
+      date:null,
+      transactions: []
     }
   },
   components:{
@@ -19,10 +20,18 @@ export default {
     VueDatePicker
   },
   methods:{
-    getCachedTransactions(){
+    getTransactions(){
       axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
-      const getTransactionsUrl = `${baseUrl}transactions`
-      axios.get(getTransactionsUrl)
+      const getTransactionsUrl = `${baseUrl}bankstatement/api/CRUDBankstatementAPI`
+
+      axios.get(getTransactionsUrl ,{
+        params:{
+          data: {
+            "from_date":this.date[0],
+            "to_date":this.date[1]
+          }
+        }
+      })
       .then(response => {
           // Process the response data
           let data = response.data

@@ -150,6 +150,7 @@ class CRUDBankstatementAPI(View):
     
     def get(self, request):
         data = request.GET
+        print(data)
         valid, response =self.process_request_data(data, request)
         if not valid:
             return response

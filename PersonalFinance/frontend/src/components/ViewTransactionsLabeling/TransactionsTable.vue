@@ -149,19 +149,6 @@
         account_types:null
     },
     methods:{
-      getTransaction(){
-        axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
-        const getTransactionsUrl = `${baseUrl}transactions`
-        axios.get(getTransactionsUrl)
-        .then(response => {
-            // Process the response data
-            return response.data
-        })
-        .catch(error => {
-            // Handle any error that occurs
-            console.error(error);
-        });
-      },
       postTransactions(){
         axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
         const CRUDBankstatementAPI = `${baseUrl}bankstatement/api/CRUDBankstatementAPI`
