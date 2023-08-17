@@ -23,25 +23,33 @@ export default {
     getTransactions(){
       axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
       const getTransactionsUrl = `${baseUrl}bankstatement/api/CRUDBankstatementAPI`
-
+      console.log({
+            start_period:this.formatDatePeriod()[0],
+            end_period:this.formatDatePeriod()[1]
+        })
       axios.get(getTransactionsUrl ,{
         params:{
-          data: {
-            "from_date":this.date[0],
-            "to_date":this.date[1]
-          }
+            start_period:this.formatDatePeriod()[0],
+            end_period:this.formatDatePeriod()[1]
         }
       })
       .then(response => {
           // Process the response data
           let data = response.data
           console.log(data)
-          return data
+          this.transactions = data.data
       })
       .catch(error => {
           // Handle any error that occurs
           console.error(error);
       });
+    },
+    formatDatePeriod(){
+      let start_date = this.date[0]
+      let end_date = this.date[1]?this.date[1]:this.date[0]
+      let start_period = `${start_date.month}-${start_date.year}`
+      let end_period = `${end_date.month}-${end_date.year}`
+      return [start_period, end_period]
     }
   }
 }

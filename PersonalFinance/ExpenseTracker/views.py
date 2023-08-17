@@ -8,7 +8,7 @@ from django.http import FileResponse, JsonResponse
 from django.core.cache import cache
 import PyPDF2
 import json
-from django.db.models import Q 
+from django.db.models import Q , Min, Max
 from collections import defaultdict
 from django.db.models.functions import ExtractMonth, ExtractYear
 from django.http import JsonResponse
@@ -19,6 +19,7 @@ from .utils import highlight_pdf, handle_file
 from django.views import View
 from json import dumps
 from django.core import serializers
+from calendar import monthrange
 
 
 # Create your views here.
@@ -150,42 +151,38 @@ class CRUDBankstatementAPI(View):
     
     def get(self, request):
         data = request.GET
-        print(data)
-        valid, response =self.process_request_data(data, request)
-        if not valid:
-            return response
+        user = User.objects.get(pk=request.user.id)
+        response = []
 
-        for period in [data.start_period, data.end_period]:
-            period_day, period_month, period_year = period.split("-")
-            try:
-                period_date = datetime(int(period_year), int(period_month), int(period_day))
-            except ValueError:
-                response = {
-                    "status": 400,
-                    "error": "ValueError",
-                    "message": "Invalid date format in period: {}".format(period)
-                }
-                return JsonResponse(response)    
-            
-        start_period = datetime(int(data.start_period.split("-")[2]), int(data.start_period.split("-")[1]), int(data.start_period.split("-")[0]))
-        end_period = datetime(int(data.end_period.split("-")[2]), int(data.end_period.split("-")[1]), int(data.end_period.split("-")[0]))
+        start_period = datetime(int(data.get('start_period').split("-")[1]), int(data.get('start_period').split("-")[0])+1, 1)
+        _, last_day = monthrange(int(data.get('end_period').split("-")[1]), int(data.get('end_period').split("-")[0])+1)
+        end_period = datetime(int(data.get('end_period').split("-")[1]), int(data.get('end_period').split("-")[0])+1, last_day)
+        earliest_transaction_date = TransactionRecord.objects.filter(user=user).aggregate(Min('date'))['date__min']
+        latest_transaction_date = TransactionRecord.objects.filter(user=user).aggregate(Max('date'))['date__max']
         
-        transactions = TransactionRecord.objects.filter(user__username='USER', date__range=[start_period, end_period])
-        
-        if not transactions.exists():
-            response = {
-                "status": 400,
-                "error": "ValueError",
-                "message": "Unable to find records from {} to {}, make sure you've entered the correct range".format(start_period, end_period)
-            }
-            return JsonResponse(response)
-        else:
-            serialized_transactions = serializers.serialize('json', transactions)
+        if not earliest_transaction_date:
             response_data = {
-                "status": 200,
-                "data": serialized_transactions,
+                "status": 400,
+                "message": "No transaction data found",
             }
-            return JsonResponse(response_data)
+            return response_data
+
+        if start_period.date() < earliest_transaction_date:
+            start_period = earliest_transaction_date
+
+        if end_period.date() > latest_transaction_date:
+            end_period = latest_transaction_date
+
+        transactions = TransactionRecord.objects.filter(user=user, date__range=[start_period, end_period])
+        
+        serialized_transactions = [transaction.serialize() for transaction in transactions]
+
+        response_data = {
+            "status": 200,
+            "message": "Successfully retrieved transactions",
+            "data": serialized_transactions,
+        }
+        return JsonResponse(response_data)
 
     
     def post(self, request):
@@ -238,7 +235,7 @@ def process_bankstatement_api(request):
         # Process uploaded PDF file
         reader = PyPDF2.PdfReader(file_object)
         transaction_data = process_bankstatement(bank_code, reader, input_value, period)
-
+        transaction_data['period_key']= "{0}-{1}".format(period["month"], period["year"])
         if not transaction_data['is_correct_pdf']:
             RESPONSE["message"] = "Couldn't Load PDF! Please make sure you're uploading the right PDF file or have selected the correct bank"
             return JsonResponse(RESPONSE, safe=False)
@@ -275,17 +272,32 @@ class TransactionLabelingView(View):
         return modified_transactions
     
     def get(self, request):
-        CONTEXT= {}
         user = User.objects.get(pk=request.user.id)
         preset_account_types = AccountCategory.objects.filter(is_preset=True).values_list('account_type', flat=True)
         user_account_types = AccountCategory.objects.filter(user=user).values_list('account_type', flat=True)
-        
         preset_account_types_list = list(preset_account_types)
         user_account_types_list = list(user_account_types)
-        CONTEXT['account_types'] = json.dumps(preset_account_types_list + user_account_types_list)
+
+        CONTEXT= {
+            "transaction_data": None,
+            "balance_summary": None,
+            "account_types": json.dumps(preset_account_types_list + user_account_types_list),
+        }
+
         transaction_data = cache.get("transaction_data")
-        CONTEXT['transactions'] = json.dumps(self.prepare_data_for_view(transaction_data['transactions'])) if transaction_data else None
-        
+        if transaction_data:
+            CONTEXT["transaction_data"] = json.dumps(self.prepare_data_for_view(transaction_data['transactions']))
+            CONTEXT["balance_summary"] = json.dumps({
+                    transaction_data['period_key']:{
+                        "month":transaction_data['period_key'].split('-')[0],
+                        "year":transaction_data['period_key'].split('-')[1],
+                        "starting_balance":transaction_data['stated_balance']['starting_balance'],
+                        "ending_balance": transaction_data['stated_balance']['ending_balance'],
+                        "credit_mutation": transaction_data['stated_balance']['mutasi_cr'],
+                        "debit_mutation": transaction_data['stated_balance']['mutasi_db'],
+                    }
+                })
+
         return render(request, "ExpenseTracker/transaction_labeling.html", CONTEXT)
 
 @login_required

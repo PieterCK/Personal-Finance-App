@@ -31,6 +31,27 @@ class AccountCategory(models.Model):
     def __str__(self):
             return f"{self.account_type}"
 
+class BalanceRecord(models.Model):
+    balance_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name="balance_history", blank=True, null=True)
+    month = models.PositiveIntegerField()
+    year = models.PositiveIntegerField()
+    balance = models.DecimalField(max_digits=20, decimal_places=2)
+    credit_mutation = models.DecimalField(max_digits=20, decimal_places=2)
+    debit_mutation = models.DecimalField(max_digits=20, decimal_places=2)
+    bank = models.ForeignKey('Bank', on_delete=models.CASCADE, related_name='bank_balance', blank=True, null=True)
+
+    def serialize(self):
+        serialized_data = {
+            "month": self.month,
+            "year": self.year,
+            "balance": str(self.balance),
+            "credit_mutation": str(self.credit_mutation),
+            "debit_mutation": str(self.debit_mutation),
+            "pk": self.balance_id,
+        }
+        return serialized_data
+
 class TransactionRecord(models.Model):
     TRANSACTION_TYPES = (
         ('CREDIT', 'Credit'),
@@ -38,6 +59,7 @@ class TransactionRecord(models.Model):
     )
     transaction_id = models.AutoField(primary_key=True)
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name="transactions_history", blank=True, null=True)
+    balance_summary = models.ForeignKey('BalanceRecord', on_delete=models.CASCADE, related_name='balance_summary', blank=True, null=True)
     date = models.DateField(auto_now = False, auto_now_add= False)
     entry = models.CharField(max_length=6, choices=TRANSACTION_TYPES)
     amount = models.DecimalField(max_digits=20, decimal_places=2)
@@ -46,6 +68,20 @@ class TransactionRecord(models.Model):
     bank = models.ForeignKey('Bank', on_delete=models.CASCADE, related_name='bank_transaction', blank=True, null=True)
     details = models.TextField(blank=True, null=True)
     
+    def serialize(self):
+        serialized_data = {
+            "info": self.info,
+            "amount": str(self.amount),
+            "account_type": self.account_type.account_type if self.account_type else None,
+            "date": str(self.date),
+            "entry": self.entry,
+            "details": self.details,
+            "select":False,
+            "error": False,
+            "pk": self.transaction_id,
+        }
+        return serialized_data
+
     def __str__(self):
             return f"{self.date} - {self.entry} - {self.amount}"
     

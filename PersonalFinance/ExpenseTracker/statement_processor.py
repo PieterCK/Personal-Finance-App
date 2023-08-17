@@ -64,6 +64,9 @@ def process_bca_statement(parsed_pages, trash_value, parse_value, period = None)
                 transaction_records['bank_code'] = 'BCA'
 
                 # Record stated balance changes
+                if "SALDO AWAL" in dirty_transaction_details:
+                    tmp_saldo_awal = re.split('SALDO AWAL', dirty_transaction_details)[1].split()
+                    stated_balance['starting_balance'] = [x for x in tmp_saldo_awal if re.search("(\d\d[.]\d\d$)", x)][0]
                 if "SALDO AKHIR" in dirty_transaction_details:
                     tmp_saldo_akhir = re.split('SALDO AKHIR', dirty_transaction_details)[1].split()
                     stated_balance['ending_balance'] = [x for x in tmp_saldo_akhir if re.search("(\d\d[.]\d\d$)", x)][0]

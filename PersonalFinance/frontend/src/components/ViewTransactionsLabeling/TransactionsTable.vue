@@ -14,9 +14,10 @@
 <SnackBar
   ref="errorSnackbar"
 ></SnackBar>
+
 <YesNoModal
   ref="loadCachedItemModal"
-  @response="(msg) => msg?this.getCachedTransactions():null"
+  @response="(msg) => msg?this.extractTransactions(this.cached_transactions_data):null"
 ></YesNoModal>
 <YesNoModal
   ref="confirmSubmissionModal"
@@ -141,19 +142,25 @@
           trigger:false,
           dialog:"Please select and label transactions first!",
         },
-        tableIsLoading:false
+        tableIsLoading:false,
+        balance_summary:[]
       }
     },
     props:{
-        cached_items:null,
-        account_types:null
+        cached_transactions_data:null,
+        account_types:null,
+        cached_summary:[],
+        transactions:[]
     },
     methods:{
       postTransactions(){
         axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
         const CRUDBankstatementAPI = `${baseUrl}bankstatement/api/CRUDBankstatementAPI`
-        
-        axios.post(CRUDBankstatementAPI, this.selectedItems)
+
+        axios.post(CRUDBankstatementAPI, {
+          transactions:this.selectedItems,
+          balance_summary:this.getBalanceSummary(this.selectedItems)
+        })
         .then(response => {
             // Process the response data
             this.tableIsLoading = false
@@ -167,13 +174,18 @@
             console.error(error);
         });
       },
-      getCachedTransactions(){
-        this.items = this.cached_items
-      },
       toggleAllCheckboxes() {
         this.items.forEach(item => {
           item.select = this.selectAll;
         });
+      },
+      getBalanceSummary(selectedItems){
+        let period_keys = []
+        for(let i=0;i<selectedItems.length;i++){
+          let tmp_date = selectedItems[i].date.split('-')
+          period_keys.push(`${tmp_date[1]}-${tmp_date[2]}`)
+        }
+        
       },
       formatPrice(value) {
         let val = (value/1).toFixed(2).replace('.', ',')
@@ -188,6 +200,9 @@
           })
         )
         this.categories = categories
+      },
+      extractTransactions(transaction_data){
+        this.items = transaction_data
       },
       validateForm(){
         this.tableIsLoading = true
@@ -228,8 +243,15 @@
         }
       }
     },
+    watch:{
+      transactions(){
+        this.$refs.errorSnackbar.popSnackBar("Loading data to table...")
+        this.items = this.transactions
+        console.log(this.transactions)
+      }
+    },
     mounted(){
-      this.cached_items ? this.$refs.loadCachedItemModal.toggleModal({
+      this.cached_transactions_data ? this.$refs.loadCachedItemModal.toggleModal({
         "title":"New Transactions",
         "text":"Would you like to load and label the newly uploaded transactions?"
       }):null
