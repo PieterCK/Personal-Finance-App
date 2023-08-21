@@ -1,6 +1,6 @@
 import re
 from typing import List
-from .models import StatementParser, TransactionRecord, AccountCategory, Bank
+from .models import StatementParser, TransactionRecord, AccountCategory, Bank, BalanceRecord
 from .utils import process_raw_pages, clean_transaction_details, cleanse_number, track_actual_changes, highlight_pdf
 import json
 from datetime import date, datetime
@@ -20,6 +20,7 @@ def verify_pdf_is_bank_statement(parsed_pages ,parse_value):
     
 def process_bca_statement(parsed_pages, trash_value, parse_value, period = None):
     statement_transactions = []
+    period_key = None
     stated_balance = {}
     actual_balance = {
         "mutasi_cr": 0,
@@ -36,7 +37,8 @@ def process_bca_statement(parsed_pages, trash_value, parse_value, period = None)
                 month = int(current_page[i].split("/")[1])
                 year = int(period['year'])
                 date_string = f"{day:02d}-{month:02d}-{year:04d}"
-
+                period_key = f"{month:02d}-{year:04d}"
+                
                 transaction_records = {
                     'date': date_string,
                     'info': current_page[i+2]
@@ -66,10 +68,10 @@ def process_bca_statement(parsed_pages, trash_value, parse_value, period = None)
                 # Record stated balance changes
                 if "SALDO AWAL" in dirty_transaction_details:
                     tmp_saldo_awal = re.split('SALDO AWAL', dirty_transaction_details)[1].split()
-                    stated_balance['starting_balance'] = [x for x in tmp_saldo_awal if re.search("(\d\d[.]\d\d$)", x)][0]
+                    stated_balance['starting_balance'] = cleanse_number([x for x in tmp_saldo_awal if re.search("(\d\d[.]\d\d$)", x)][0])
                 if "SALDO AKHIR" in dirty_transaction_details:
                     tmp_saldo_akhir = re.split('SALDO AKHIR', dirty_transaction_details)[1].split()
-                    stated_balance['ending_balance'] = [x for x in tmp_saldo_akhir if re.search("(\d\d[.]\d\d$)", x)][0]
+                    stated_balance['ending_balance'] = cleanse_number([x for x in tmp_saldo_akhir if re.search("(\d\d[.]\d\d$)", x)][0])
                 if "MUTASI CR" in dirty_transaction_details:
                     tmp_mutasi_cr = re.split('MUTASI CR', dirty_transaction_details)[1].split()
                     stated_balance['mutasi_cr'] = cleanse_number([x for x in tmp_mutasi_cr if re.search("(\d\d[.]\d\d$)", x)][0])
@@ -90,7 +92,7 @@ def process_bca_statement(parsed_pages, trash_value, parse_value, period = None)
                 if transaction_records["info"] != "SALDO AWAL":
                     statement_transactions.append(transaction_records)
 
-    return statement_transactions, stated_balance, actual_balance
+    return statement_transactions, stated_balance, actual_balance, period_key
 
 def verify_processed_transactions(statement_transactions, stated_balance, actual_balance):
     '''
@@ -157,7 +159,7 @@ def process_bankstatement(bank_code, reader, input_value= None, period = None):
 
     # Process statement according to bank code
     if bank_code == "BCA":
-        statement_transactions, stated_balance, actual_balance = process_bca_statement(parsed_pages, trash_value, parse_value, period)
+        statement_transactions, stated_balance, actual_balance, period_key = process_bca_statement(parsed_pages, trash_value, parse_value, period)
     else:
         return
     
@@ -166,6 +168,7 @@ def process_bankstatement(bank_code, reader, input_value= None, period = None):
     parse_value.remove("\d\d/\d\d")
     return {
         "transactions": statement_transactions,
+        "period_key": period_key,
         "stated_balance": stated_balance,
         "actual_balance": actual_balance,
         "suspicious_transactions": suspicious_transactions,
@@ -174,9 +177,10 @@ def process_bankstatement(bank_code, reader, input_value= None, period = None):
         "parse_value": parse_value
     }
 
-def submit_transactions(user,statement_transactions):
+def submit_transactions(user, statement_transactions):
     acknowledgement = {}
     failure = []
+
     for transaction in statement_transactions:
         try:
             TransactionRecord.objects.create(
@@ -202,4 +206,30 @@ def submit_transactions(user,statement_transactions):
         "pk_map": acknowledgement,
         "failure": failure
     }
+
+def submit_balance_summaries(user, balance_summaries):
+    acknowledgement = {}
+    failure = []
+
+    for bs in balance_summaries:
+        try:
+            BalanceRecord.objects.create(
+                user = user,
+                month = bs['month'],
+                year = bs['year'],
+                ending_balance = bs['ending_balance'],
+                starting_balance = bs['starting_balance'],
+                credit_mutation = bs['credit_mutation'],
+                debit_mutation = bs['debit_mutation']
+            )
+        except:
+            failure.append(bs)
+            continue
     
+    return {
+        "saved": len(acknowledgement),
+        "failed": len(failure),
+        "total": len(balance_summaries),
+        "pk_map": acknowledgement,
+        "failure": failure
+    }

@@ -36,7 +36,8 @@ class BalanceRecord(models.Model):
     user = models.ForeignKey('User', on_delete=models.CASCADE, related_name="balance_history", blank=True, null=True)
     month = models.PositiveIntegerField()
     year = models.PositiveIntegerField()
-    balance = models.DecimalField(max_digits=20, decimal_places=2)
+    starting_balance = models.DecimalField(max_digits=20, decimal_places=2)
+    ending_balance = models.DecimalField(max_digits=20, decimal_places=2)
     credit_mutation = models.DecimalField(max_digits=20, decimal_places=2)
     debit_mutation = models.DecimalField(max_digits=20, decimal_places=2)
     bank = models.ForeignKey('Bank', on_delete=models.CASCADE, related_name='bank_balance', blank=True, null=True)
@@ -45,7 +46,8 @@ class BalanceRecord(models.Model):
         serialized_data = {
             "month": self.month,
             "year": self.year,
-            "balance": str(self.balance),
+            "starting_balance": float(self.starting_balance),
+            "ending_balance": float(self.ending_balance),
             "credit_mutation": str(self.credit_mutation),
             "debit_mutation": str(self.debit_mutation),
             "pk": self.balance_id,

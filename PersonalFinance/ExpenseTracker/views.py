@@ -14,7 +14,7 @@ from django.db.models.functions import ExtractMonth, ExtractYear
 from django.http import JsonResponse
 from datetime import datetime
 from .models import User, StatementParser, TransactionRecord, AccountCategory
-from .statement_processor import process_bankstatement, submit_transactions
+from .statement_processor import process_bankstatement, submit_transactions, submit_balance_summaries
 from .utils import highlight_pdf, handle_file
 from django.views import View
 from json import dumps
@@ -188,17 +188,20 @@ class CRUDBankstatementAPI(View):
     def post(self, request):
         data = json.loads(request.body)
         user = User.objects.get(pk=request.user.id)
-        statusObj = submit_transactions(user, data)
-        if statusObj['saved'] == statusObj['total']:        
+        
+        submit_balance_summaries()
+
+        status_obj = submit_transactions(user, data)
+        if status_obj['saved'] == status_obj['total']:        
             return JsonResponse({
                 "status":200,
-                "message":"Successfully saved {0} / {1} data".format(statusObj['saved'], statusObj['total']),
+                "message":"Successfully saved {0} / {1} data".format(status_obj['saved'], status_obj['total']),
             })
         else:
             return JsonResponse({
                 "status":400,
-                "message":"Only {0} / {1} data successfully saved".format(statusObj['saved'], statusObj['total']),
-                "failure": statusObj['failure'],
+                "message":"Only {0} / {1} data successfully saved".format(status_obj['saved'], status_obj['total']),
+                "failure": status_obj['failure'],
             })
     
     def put(self, request):
@@ -235,7 +238,6 @@ def process_bankstatement_api(request):
         # Process uploaded PDF file
         reader = PyPDF2.PdfReader(file_object)
         transaction_data = process_bankstatement(bank_code, reader, input_value, period)
-        transaction_data['period_key']= "{0}-{1}".format(period["month"], period["year"])
         if not transaction_data['is_correct_pdf']:
             RESPONSE["message"] = "Couldn't Load PDF! Please make sure you're uploading the right PDF file or have selected the correct bank"
             return JsonResponse(RESPONSE, safe=False)
@@ -289,15 +291,14 @@ class TransactionLabelingView(View):
             CONTEXT["transaction_data"] = json.dumps(self.prepare_data_for_view(transaction_data['transactions']))
             CONTEXT["balance_summary"] = json.dumps({
                     transaction_data['period_key']:{
-                        "month":transaction_data['period_key'].split('-')[0],
-                        "year":transaction_data['period_key'].split('-')[1],
+                        "month": transaction_data['period_key'].split('-')[0],
+                        "year": transaction_data['period_key'].split('-')[1],
                         "starting_balance":transaction_data['stated_balance']['starting_balance'],
                         "ending_balance": transaction_data['stated_balance']['ending_balance'],
                         "credit_mutation": transaction_data['stated_balance']['mutasi_cr'],
                         "debit_mutation": transaction_data['stated_balance']['mutasi_db'],
                     }
                 })
-
         return render(request, "ExpenseTracker/transaction_labeling.html", CONTEXT)
 
 @login_required

@@ -17,7 +17,7 @@
 
 <YesNoModal
   ref="loadCachedItemModal"
-  @response="(msg) => msg?this.extractTransactions(this.cached_transactions_data):null"
+  @response="(msg) => msg?this.getCachedData():null"
 ></YesNoModal>
 <YesNoModal
   ref="confirmSubmissionModal"
@@ -93,7 +93,7 @@
 <script>
   import axios from 'axios';
   import Cookies from 'js-cookie';
-
+  import {toRaw} from 'vue'
   import YesNoModal from '../YesNoModal.vue';
   import TableHeaderCard from '../TableHeaderCard.vue';
   import SnackBar from '../SnackBar.vue';
@@ -181,11 +181,21 @@
       },
       getBalanceSummary(selectedItems){
         let period_keys = []
-        for(let i=0;i<selectedItems.length;i++){
-          let tmp_date = selectedItems[i].date.split('-')
-          period_keys.push(`${tmp_date[1]}-${tmp_date[2]}`)
+        let balance_summaries = []
+        let tmp_balance_summary = toRaw(this.balance_summary)
+        for(const element of selectedItems){
+          let tmp_date = element.date.split('-')
+          let item_period_key = `${tmp_date[1]}-${tmp_date[2]}`
+          console.log("item_period_key: ", item_period_key)
+          console.log("item_period_key: ", item_period_key)
+          if (!period_keys.includes(item_period_key)){
+            period_keys.push(item_period_key)
+            balance_summaries.push(tmp_balance_summary[item_period_key])
+          } 
         }
-        
+        console.log("tmp balance summary: ",tmp_balance_summary)
+        console.log("balance summaries: ",balance_summaries)
+        return balance_summaries
       },
       formatPrice(value) {
         let val = (value/1).toFixed(2).replace('.', ',')
@@ -201,8 +211,9 @@
         )
         this.categories = categories
       },
-      extractTransactions(transaction_data){
-        this.items = transaction_data
+      getCachedData(){
+        this.items = this.cached_transactions_data
+        this.balance_summary = this.cached_summary
       },
       validateForm(){
         this.tableIsLoading = true
@@ -247,7 +258,6 @@
       transactions(){
         this.$refs.errorSnackbar.popSnackBar("Loading data to table...")
         this.items = this.transactions
-        console.log(this.transactions)
       }
     },
     mounted(){

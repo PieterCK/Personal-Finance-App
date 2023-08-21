@@ -8,10 +8,6 @@
         <option>BNI</option>
         <option>BTPN</option>
     </select>
-    <label for="month" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Month</label>
-    <select v-model="month" id="month" name="month" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500">
-      <option v-for="month in months" :key="month.key">{{month.name}}</option>
-  </select>
   <label for="year" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Year</label>
   <select v-model="year" id="year" name="year" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-green-500 dark:focus:border-green-500">
     <option v-for="year in showYears" :key="year.key">{{year.name}}</option>
@@ -29,21 +25,6 @@ export default {
     return {
       file: null,
       bank_code: null,
-      months: [
-        { key: "january", name: "January" },
-        { key: "february", name: "February" },
-        { key: "march", name: "March" },
-        { key: "april", name: "April" },
-        { key: "may", name: "May" },
-        { key: "june", name: "June" },
-        { key: "july", name: "July" },
-        { key: "august", name: "August" },
-        { key: "september", name: "September" },
-        { key: "october", name: "October" },
-        { key: "november", name: "November" },
-        { key: "december", name: "December" },
-      ],
-      month: null,
       year: null
       
     };
@@ -86,7 +67,6 @@ export default {
 
         formData.append('uploaded_file', this.file);
         formData.append('bank', this.bank_code);
-        formData.append('month', this.month)
         formData.append('year', this.year)
         
         axios.post(bankStatementUrl, formData)

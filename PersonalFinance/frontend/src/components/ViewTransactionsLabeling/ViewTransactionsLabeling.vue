@@ -23,10 +23,7 @@ export default {
     getTransactions(){
       axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
       const getTransactionsUrl = `${baseUrl}bankstatement/api/CRUDBankstatementAPI`
-      console.log({
-            start_period:this.formatDatePeriod()[0],
-            end_period:this.formatDatePeriod()[1]
-        })
+
       axios.get(getTransactionsUrl ,{
         params:{
             start_period:this.formatDatePeriod()[0],
@@ -36,7 +33,6 @@ export default {
       .then(response => {
           // Process the response data
           let data = response.data
-          console.log(data)
           this.transactions = data.data
       })
       .catch(error => {
