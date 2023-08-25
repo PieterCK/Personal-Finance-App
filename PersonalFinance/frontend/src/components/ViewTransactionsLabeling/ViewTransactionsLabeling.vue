@@ -11,7 +11,8 @@ export default {
   data(){
     return{
       date:null,
-      transactions: []
+      transactions: [],
+      balance_summaries: []
     }
   },
   components:{
@@ -32,8 +33,9 @@ export default {
       })
       .then(response => {
           // Process the response data
-          let data = response.data
-          this.transactions = data.data
+          let data = response.data.data
+          console.log(data)
+          organizeTransactionData(data)
       })
       .catch(error => {
           // Handle any error that occurs
@@ -46,7 +48,10 @@ export default {
       let start_period = `${start_date.month}-${start_date.year}`
       let end_period = `${end_date.month}-${end_date.year}`
       return [start_period, end_period]
-    }
+    },
+    organizeTransactionData(data){
+      
+    },
   }
 }
 </script>

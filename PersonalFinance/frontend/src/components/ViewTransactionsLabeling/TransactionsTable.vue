@@ -183,18 +183,17 @@
         let period_keys = []
         let balance_summaries = []
         let tmp_balance_summary = toRaw(this.balance_summary)
+        
         for(const element of selectedItems){
           let tmp_date = element.date.split('-')
           let item_period_key = `${tmp_date[1]}-${tmp_date[2]}`
-          console.log("item_period_key: ", item_period_key)
-          console.log("item_period_key: ", item_period_key)
+          
           if (!period_keys.includes(item_period_key)){
             period_keys.push(item_period_key)
             balance_summaries.push(tmp_balance_summary[item_period_key])
           } 
         }
-        console.log("tmp balance summary: ",tmp_balance_summary)
-        console.log("balance summaries: ",balance_summaries)
+       
         return balance_summaries
       },
       formatPrice(value) {

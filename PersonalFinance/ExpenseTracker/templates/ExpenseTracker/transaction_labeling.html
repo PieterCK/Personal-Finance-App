@@ -11,8 +11,10 @@
             <h5 class="mb-4 text-xl font-medium text-gray-800 dark:text-gray-800">Income</h5>
             <div class="flex items-baseline text-gray-900 dark:text-white">
                   <span class="text-3xl font-semibold">Rp</span>
-                  <span class="text-5xl font-extrabold tracking-tight">49</span>
-                  <span class="ml-1 text-xl font-normal text-gray-500 dark:text-gray-400">/month</span>
+                  {% verbatim %}
+                  <span class="text-5xl font-extrabold tracking-tight">{{balance_summaries}}</span>
+                  {% endverbatim %}
+
             </div>
             <div class="flow-root">
                <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -45,8 +47,7 @@
             <h5 class="mb-4 text-xl font-medium text-gray-500 dark:text-gray-400">Total</h5>
             <div class="flex items-baseline text-gray-900 dark:text-white">
                   <span class="text-3xl font-semibold">Rp</span>
-                  <span class="text-5xl font-extrabold tracking-tight">49</span>
-                  <span class="ml-1 text-xl font-normal text-gray-500 dark:text-gray-400">/month</span>
+                  <span class="text-5xl font-extrabold tracking-tight">"{{balance_summary.debit_mutation}}"</span>
             </div>
          </div>
        </div>

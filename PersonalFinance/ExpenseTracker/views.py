@@ -13,7 +13,7 @@ from collections import defaultdict
 from django.db.models.functions import ExtractMonth, ExtractYear
 from django.http import JsonResponse
 from datetime import datetime
-from .models import User, StatementParser, TransactionRecord, AccountCategory
+from .models import User, StatementParser, TransactionRecord, AccountCategory, BalanceRecord
 from .statement_processor import process_bankstatement, submit_transactions, submit_balance_summaries
 from .utils import highlight_pdf, handle_file
 from django.views import View
@@ -174,13 +174,21 @@ class CRUDBankstatementAPI(View):
             end_period = latest_transaction_date
 
         transactions = TransactionRecord.objects.filter(user=user, date__range=[start_period, end_period])
-        
-        serialized_transactions = [transaction.serialize() for transaction in transactions]
+        balance_summaries = BalanceRecord.objects.filter(
+            Q(user=user),
+            Q(month__gte=start_period.month, year=start_period.year) &
+            Q(month__lte=end_period.month, year=end_period.year)
+        )
 
+        serialized_transactions = [transaction.serialize() for transaction in transactions]
+        serialized_bs = [bs.serialize() for bs in balance_summaries]
         response_data = {
             "status": 200,
             "message": "Successfully retrieved transactions",
-            "data": serialized_transactions,
+            "data": {
+                'transactions':serialized_transactions,
+                'balance_summaries':serialized_bs
+            }
         }
         return JsonResponse(response_data)
 
@@ -188,10 +196,10 @@ class CRUDBankstatementAPI(View):
     def post(self, request):
         data = json.loads(request.body)
         user = User.objects.get(pk=request.user.id)
-        
-        submit_balance_summaries()
 
-        status_obj = submit_transactions(user, data)
+        submit_balance_summaries(user, data.get('balance_summary'))
+
+        status_obj = submit_transactions(user, data.get('transactions'))
         if status_obj['saved'] == status_obj['total']:        
             return JsonResponse({
                 "status":200,

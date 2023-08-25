@@ -182,22 +182,37 @@ def submit_transactions(user, statement_transactions):
     failure = []
 
     for transaction in statement_transactions:
-        try:
-            TransactionRecord.objects.create(
-                user = user,
-                bank = Bank.objects.filter(bank_code = transaction['bank_code']).get(),
-                info = transaction['info'],
-                entry = transaction['entry'],
-                amount = transaction['amount'],
-                details = transaction['details'],
-                date = datetime.strptime(transaction['date'].split()[0], "%d-%m-%Y"),
-                account_type = AccountCategory.objects.filter(account_type = transaction['account_type']).get()
-            )
-            pk = TransactionRecord.objects.filter(user = user).order_by('-pk')[0].pk
-            acknowledgement[pk] = transaction['info']+transaction['date']
-        except:
-            failure.append(transaction)
-            continue
+        existing_record = TransactionRecord.objects.filter(
+            user=user,
+            bank__bank_code=transaction['bank_code'],
+            info=transaction['info'],
+            entry=transaction['entry'],
+            amount=transaction['amount'],
+            details=transaction['details'],
+            date=datetime.strptime(transaction['date'].split()[0], "%d-%m-%Y"),
+            account_type__account_type=transaction['account_type']
+        ).first()
+
+        if existing_record:
+            existing_record.account_type = AccountCategory.objects.filter(account_type=transaction['account_type']).get()
+            existing_record.save()
+            acknowledgement[existing_record.pk] = transaction['info'] + transaction['date']
+        else:
+            try:
+                new_record = TransactionRecord.objects.create(
+                    user=user,
+                    bank=Bank.objects.filter(bank_code=transaction['bank_code']).get(),
+                    info=transaction['info'],
+                    entry=transaction['entry'],
+                    amount=transaction['amount'],
+                    details=transaction['details'],
+                    date=datetime.strptime(transaction['date'].split()[0], "%d-%m-%Y"),
+                    account_type=AccountCategory.objects.filter(account_type=transaction['account_type']).get()
+                )
+                acknowledgement[new_record.pk] = transaction['info'] + transaction['date']
+            except:
+                failure.append(transaction)
+                continue
 
     return {
         "saved": len(acknowledgement),
@@ -207,24 +222,39 @@ def submit_transactions(user, statement_transactions):
         "failure": failure
     }
 
+
 def submit_balance_summaries(user, balance_summaries):
     acknowledgement = {}
     failure = []
-
+    
     for bs in balance_summaries:
-        try:
-            BalanceRecord.objects.create(
-                user = user,
-                month = bs['month'],
-                year = bs['year'],
-                ending_balance = bs['ending_balance'],
-                starting_balance = bs['starting_balance'],
-                credit_mutation = bs['credit_mutation'],
-                debit_mutation = bs['debit_mutation']
-            )
-        except:
-            failure.append(bs)
-            continue
+        existing_record = BalanceRecord.objects.filter(
+            user=user,
+            month=bs['month'],
+            year=bs['year'],
+            ending_balance=bs['ending_balance'],
+            starting_balance=bs['starting_balance'],
+            credit_mutation=bs['credit_mutation'],
+            debit_mutation=bs['debit_mutation']
+        ).first()
+
+        if existing_record:
+            acknowledgement[(bs['month'], bs['year'])] = existing_record.pk
+        else:
+            try:
+                new_record = BalanceRecord.objects.create(
+                    user=user,
+                    month=bs['month'],
+                    year=bs['year'],
+                    ending_balance=bs['ending_balance'],
+                    starting_balance=bs['starting_balance'],
+                    credit_mutation=bs['credit_mutation'],
+                    debit_mutation=bs['debit_mutation']
+                )
+                acknowledgement[(bs['month'], bs['year'])] = new_record.pk
+            except:
+                failure.append(bs)
+                continue
     
     return {
         "saved": len(acknowledgement),
