@@ -7,57 +7,21 @@
  <div class="mx-8" >
     <div class="p-4 border-2 border border rounded-lg dark:border-black-700">
        <div class="grid grid-cols-3 gap-4 mb-4">
-         <div class="w-full max-w-sm p-2 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
-            <h5 class="mb-4 text-xl font-medium text-gray-800 dark:text-gray-800">Income</h5>
-            <div class="flex items-baseline text-gray-900 dark:text-white">
-                  <span class="text-3xl font-semibold">Rp</span>
-                  {% verbatim %}
-                  <span class="text-5xl font-extrabold tracking-tight">{{balance_summaries}}</span>
-                  {% endverbatim %}
-
-            </div>
-            <div class="flow-root">
-               <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
-                   <li class="py-3 sm:py-4">
-                       <div class="flex items-center space-x-4">
-                           <div class="flex-shrink-0" >
-                              <svg class="text-green-500 transition duration-75 dark:text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="currentColor" height="0.75em" viewBox="0 0 576 512"><path d="M384 160c-17.7 0-32-14.3-32-32s14.3-32 32-32H544c17.7 0 32 14.3 32 32V288c0 17.7-14.3 32-32 32s-32-14.3-32-32V205.3L342.6 374.6c-12.5 12.5-32.8 12.5-45.3 0L192 269.3 54.6 406.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l160-160c12.5-12.5 32.8-12.5 45.3 0L320 306.7 466.7 160H384z"/></svg>
-                           </div>
-                           <div class="flex-1 min-w-0">
-                               <p class="text-sm font-medium text-gray-900 truncate dark:text-white">
-                                   Last month: 2-05-2023
-                               </p>
-                           </div>
-                           <div class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                               Rp. 320
-                           </div>
-                       </div>
-                   </li>
-            </div>   
-         </div>
-         <div class="w-full max-w-sm p-2 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
-            <h5 class="mb-4 text-xl font-medium text-gray-500 dark:text-gray-400">Expense</h5>
-            <div class="flex items-baseline text-gray-900 dark:text-white">
-                  <span class="text-3xl font-semibold">Rp</span>
-                  <span class="text-5xl font-extrabold tracking-tight">49</span>
-                  <span class="ml-1 text-xl font-normal text-gray-500 dark:text-gray-400">/month</span>
-            </div>
-         </div>
-         <div class="w-full max-w-sm p-2 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
-            <h5 class="mb-4 text-xl font-medium text-gray-500 dark:text-gray-400">Total</h5>
-            <div class="flex items-baseline text-gray-900 dark:text-white">
-                  <span class="text-3xl font-semibold">Rp</span>
-                  <span class="text-5xl font-extrabold tracking-tight">"{{balance_summary.debit_mutation}}"</span>
-            </div>
-         </div>
+         <figure-card
+            ref="incomeCard"
+         ></figure-card>
+         <figure-card
+            ref="expenseCard"
+         ></figure-card>
+         <figure-card
+            ref="balanceCard"
+         ></figure-card>
        </div>
        <div class="grid grid-cols-2 gap-4 mb-4">
-          <div class="flex items-center justify-center rounded bg-gray-50 h-28 dark:bg-gray-800">
-             <p class="text-2xl text-gray-400 dark:text-gray-500">
-                <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                   <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-                </svg>
-             </p>
+          <div class="flex items-center justify-center rounded bg-gray-50 h-90 dark:bg-gray-800">
+            <pie-chart
+            ref="generalPieChart"
+            ></pie-chart>
           </div>
           <div class="flex items-center justify-center rounded bg-gray-50 h-28 dark:bg-gray-800">
              <p class="text-2xl text-gray-400 dark:text-gray-500">
@@ -154,7 +118,7 @@
                         <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 group-hover:text-gray-900 dark:text-gray-400 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 21">
                            <path d="M15 12a1 1 0 0 0 .962-.726l2-7A1 1 0 0 0 17 3H3.77L3.175.745A1 1 0 0 0 2.208 0H1a1 1 0 0 0 0 2h.438l.6 2.255v.019l2 7 .746 2.986A3 3 0 1 0 9 17a2.966 2.966 0 0 0-.184-1h2.368c-.118.32-.18.659-.184 1a3 3 0 1 0 3-3H6.78l-.5-2H15Z"/>
                         </svg>
-                        <span class="flex-1 ml-3 text-left whitespace-nowrap">E-commerce</span>
+                        <span class="flex-1 ml-3 text-left whitespace-nowrap">Monthly Transactions</span>
                         <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
                         </svg>

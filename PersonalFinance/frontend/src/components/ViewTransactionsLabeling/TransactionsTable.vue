@@ -65,10 +65,10 @@
                     {{ item.info }}
                 </td>
                 <td v-if="item.entry == 'Debit'" scope="row" class="px-1 font-bold py-1 text-sm text-rose-400 whitespace-nowrap dark:text-white">
-                    - Rp {{formatPrice(item.amount)}}
+                    - {{formatPrice(item.amount)}}
                 </td>
                 <td v-else scope="row" class="px-1 py-1 font-semibold text-sm text-green-700 font-small whitespace-nowrap dark:text-white">
-                      Rp {{formatPrice(item.amount)}}
+                      {{formatPrice(item.amount)}}
                 </td>
                 <td  scope="row" class="px-1 py-1 font-small text-gray-900 text-sm whitespace-nowrap dark:text-white">
                     {{ item.date }}
@@ -97,6 +97,7 @@
   import YesNoModal from '../YesNoModal.vue';
   import TableHeaderCard from '../TableHeaderCard.vue';
   import SnackBar from '../SnackBar.vue';
+  import { formatPrice } from '../Utils/utils';
 
   const baseUrl = process.env.VUE_APP_BASE_URL;
 
@@ -196,10 +197,7 @@
        
         return balance_summaries
       },
-      formatPrice(value) {
-        let val = (value/1).toFixed(2).replace('.', ',')
-        return val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
-      },
+      formatPrice,
       processCategorySelect(account_types){
         let categories = [{key:null, name:null}]
         account_types.forEach(category=> 

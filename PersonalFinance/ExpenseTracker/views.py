@@ -182,12 +182,16 @@ class CRUDBankstatementAPI(View):
 
         serialized_transactions = [transaction.serialize() for transaction in transactions]
         serialized_bs = [bs.serialize() for bs in balance_summaries]
+        pie_chart_data = TransactionRecord.get_account_type_sum(start_period, end_period)
         response_data = {
             "status": 200,
             "message": "Successfully retrieved transactions",
             "data": {
                 'transactions':serialized_transactions,
                 'balance_summaries':serialized_bs
+            },
+            "charts": {
+                'pie_chart': pie_chart_data
             }
         }
         return JsonResponse(response_data)

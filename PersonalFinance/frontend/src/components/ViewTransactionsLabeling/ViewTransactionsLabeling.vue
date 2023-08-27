@@ -5,7 +5,9 @@ const baseUrl = process.env.VUE_APP_BASE_URL;
 import TransactionsTable from './TransactionsTable.vue';
 import TableHeaderCard from '../TableHeaderCard.vue';
 import VueDatePicker from '@vuepic/vue-datepicker';
+import PieChart from '../ViewDashboard/PieChart.vue';
 import '@vuepic/vue-datepicker/dist/main.css'
+import FigureCard from '../ViewDashboard/FigureCard.vue'
 
 export default {
   data(){
@@ -18,7 +20,9 @@ export default {
   components:{
     TransactionsTable,
     TableHeaderCard,
-    VueDatePicker
+    VueDatePicker,
+    FigureCard,
+    PieChart
   },
   methods:{
     getTransactions(){
@@ -34,8 +38,15 @@ export default {
       .then(response => {
           // Process the response data
           let data = response.data.data
-          console.log(data)
-          organizeTransactionData(data)
+          let charts = response.data.charts
+          this.balance_summaries = data.balance_summaries
+          this.transactions = data.transactions
+          this.$refs.incomeCard.setUpFigureCard("Income", this.balance_summaries)
+          this.$refs.expenseCard.setUpFigureCard("Expense", this.balance_summaries)
+          this.$refs.balanceCard.setUpFigureCard("Balance", this.balance_summaries)
+          console.log(charts)
+          this.$refs.generalPieChart.setUpPieChart(charts.pie_chart)
+          
       })
       .catch(error => {
           // Handle any error that occurs
@@ -48,9 +59,6 @@ export default {
       let start_period = `${start_date.month}-${start_date.year}`
       let end_period = `${end_date.month}-${end_date.year}`
       return [start_period, end_period]
-    },
-    organizeTransactionData(data){
-      
     },
   }
 }
