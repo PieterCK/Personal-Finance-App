@@ -1,9 +1,32 @@
 import re
-from typing import List
-from .models import StatementParser, TransactionRecord
+from typing import List, Dict, Union
+from .models import StatementParser, TransactionRecord, AccountCategory
 from decimal import Decimal
 import fitz
 import io
+from django.db.models import Q , Min, Max
+from django.db.models.functions import ExtractMonth, ExtractYear
+from datetime import date, datetime
+
+def month_converter(month:str) -> Union [int,bool]:
+    month_mapping = {
+        "JANUARI": 1,
+        "FEBRUARI": 2,
+        "MARET": 3,
+        "APRIL": 4,
+        "MEI": 5,
+        "JUNI": 6,
+        "JULI": 7,
+        "AGUSTUS": 8,
+        "SEPTEMBER": 9,
+        "OKTOBER": 10,
+        "NOVEMBER": 11,
+        "DESEMBER": 12
+    }
+    if month in month_mapping:
+        return month_mapping[month]
+    else:
+        return False
 
 def handle_file(uploaded_pdf, form):
     '''
@@ -36,29 +59,6 @@ def process_raw_pages(pages_read, parse_value):
         parsed_pages.append(clean_raw_parse(raw_parse))
     return parsed_pages
 
-#  Clean raw parsed data
-def clean_raw_parse(data_list):
-    '''
-    param: data_list: list of raw parsed data
-    return: list of data in chunks composed of date, whitespace, info, and detail.['26/03','','TRANSAKSI DEBIT DB', 'SPBU-PERTAMINA 250,000.14 DB']
-    ''' 
-    parsed_list = []
-    i = 0
-    while i < len(data_list):
-        if re.search("(\d\d/\d\d)", data_list[i]) and data_list[i+1] == ' ':
-            for n in range(3):
-                x = i + n
-                parsed_list.append(data_list[x])
-            i += 3
-            temp = []
-            while i < len(data_list) and not (re.search("(\d\d/\d\d)", data_list[i]) and data_list[i+1] == ' '):
-                temp.append(data_list[i])
-                i += 1
-            parsed_list.append("".join(temp))
-        else:
-            i += 1
-    return parsed_list
-
 # Clean transaction details
 def clean_transaction_details(transaction_records, trash_value, dirty_transaction_details):
     '''
@@ -85,8 +85,10 @@ def cleanse_number(raw_string):
     param: dirty string of numbers, e.g: "Amount = 2,001,140.28 ;"
     return: Decimal number "2,001,140.28"
     '''
+    if not raw_string:
+        return 0.0
     number_string = re.sub(r'[^\d.]', '',raw_string)
-    number_decimal = float(number_string)
+    number_decimal = round(float(number_string),1)
     return number_decimal
 
 def track_actual_changes(transaction_records, actual_balance):
@@ -96,27 +98,32 @@ def track_actual_changes(transaction_records, actual_balance):
         actual_balance['mutasi_cr'] += transaction_records['amount']
     return actual_balance
 
-def highlight_pdf(uploaded_pdf, bank_code, input_value=None):
-    # Open IoBuffer pdf
-    doc = fitz.Document(stream = uploaded_pdf, filetype = 'pdf')
-    parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
-    if input_value:
-        for value in input_value:
-            parse_value.append(value)
-    print(parse_value)
-    for page in doc:
-        ### SEARCH
-        text_instances = None
-        for value in parse_value:
-            text_instances = page.search_for(value)
-
-            ### HIGHLIGHT
-            for inst in text_instances:
-                highlight = page.add_highlight_annot(inst)
-                highlight.update()
-
-    ### OUTPUT
-    output_pdf_bytes = io.BytesIO()
-    doc.save(output_pdf_bytes, garbage=4, deflate=True, clean=True)
-    return output_pdf_bytes
     
+def get_account_types(user):
+    # Get all account types
+    preset_account_types = AccountCategory.objects.filter(is_preset=True).values_list('account_type', flat=True)
+    user_account_types = AccountCategory.objects.filter(user=user).values_list('account_type', flat=True)
+    preset_account_types_list = list(preset_account_types)
+    user_account_types_list = list(user_account_types)
+    return preset_account_types_list + user_account_types_list
+
+def get_unlabeled_transactions_period(user):
+    # Find the earliest month and year of unlabelled transactions
+    unlabelled_transactions = TransactionRecord.objects.filter(account_type__isnull=True, user=user)
+
+    earliest_unlabelled_date = unlabelled_transactions.aggregate(
+        earliest_month=Min(ExtractMonth('date')),
+        earliest_year=Min(ExtractYear('date'))
+    )
+    print("earliers: ", earliest_unlabelled_date)
+    # If there are unlabelled transactions, set the startPeriod and endPeriod
+    if earliest_unlabelled_date['earliest_month'] is not None:
+        startPeriod = date(earliest_unlabelled_date['earliest_year'], earliest_unlabelled_date['earliest_month']-1, 1)
+        endPeriod = date(earliest_unlabelled_date['earliest_year'], earliest_unlabelled_date['earliest_month']-1, 1)
+        result = {
+            "start_period": startPeriod.strftime('%m-%Y'),
+            "end_period": endPeriod.strftime('%m-%Y'),
+        }
+    else:
+        result = None
+    return result

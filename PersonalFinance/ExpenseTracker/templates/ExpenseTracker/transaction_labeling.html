@@ -17,33 +17,18 @@
             ref="balanceCard"
          ></figure-card>
        </div>
-       <div class="grid grid-cols-2 gap-4 mb-4">
+       <div class="grid grid-cols-3 gap-4 mb-4">
           <div class="flex items-center justify-center rounded bg-gray-50 h-90 dark:bg-gray-800">
             <pie-chart
             ref="generalPieChart"
             ></pie-chart>
           </div>
-          <div class="flex items-center justify-center rounded bg-gray-50 h-28 dark:bg-gray-800">
-             <p class="text-2xl text-gray-400 dark:text-gray-500">
-                <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                   <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-                </svg>
-             </p>
-          </div>
-          <div class="flex items-center justify-center rounded bg-gray-50 h-28 dark:bg-gray-800">
-             <p class="text-2xl text-gray-400 dark:text-gray-500">
-                <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                   <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-                </svg>
-             </p>
-          </div>
-          <div class="flex items-center justify-center rounded bg-gray-50 h-28 dark:bg-gray-800">
-             <p class="text-2xl text-gray-400 dark:text-gray-500">
-                <svg class="w-3.5 h-3.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 18">
-                   <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 1v16M1 9h16"/>
-                </svg>
-             </p>
-          </div>
+         <figure-card
+         ref=""
+         ></figure-card>
+         <figure-card
+         ref=""
+         ></figure-card>
        </div>
        <div class="flex items-center justify-center h-48 mb-4 rounded bg-gray-50 dark:bg-gray-800">
           <p class="text-2xl text-gray-400 dark:text-gray-500">
@@ -153,12 +138,19 @@
          >
            <transactions-table 
            ref="TransactionsTable"
-           :cached_transactions_data = "{{transaction_data}}"
-           :cached_summary="{{balance_summary}}"
+           :headers = "main_table_headers"
+           :items = "transactions"
            :account_types = "{{account_types}}"
-           :transactions = "transactions"
+           :unlabeled_transactions = "{{unlabeled_periods}}"
+           @update-item="updateItem"
+           @submit-transactions="putTransactions"
+           @load-transactions="getTransactions"
            ></transactions-table>
       </div>
+      <v-overlay v-model="overlay"></v-overlay>
+      <snack-bar
+      ref="errorSnackbar"
+      ></snack-bar>
    </div>
 </div>
 </div>

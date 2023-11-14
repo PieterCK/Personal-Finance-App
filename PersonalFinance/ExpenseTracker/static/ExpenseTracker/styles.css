@@ -18,10 +18,7 @@ div#bankstatement_view {
     justify-content: center;
     align-items: center;
 }
-div#bankstatement_view embed {
-    height: 450px;
-    width: 350px;
-}
+
 div#bankstatement_view div{
     margin: 10px;
 }

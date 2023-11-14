@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.shortcuts import HttpResponse, HttpResponseRedirect, render
+from django.shortcuts import HttpResponse, HttpResponseRedirect, render, redirect
 from django.urls import reverse
 from django.http import FileResponse, JsonResponse
 from django.core.cache import cache
@@ -14,14 +14,14 @@ from django.db.models.functions import ExtractMonth, ExtractYear
 from django.http import JsonResponse
 from datetime import datetime
 from .models import User, StatementParser, TransactionRecord, AccountCategory, BalanceRecord
-from .statement_processor import process_bankstatement, submit_transactions, submit_balance_summaries
-from .utils import highlight_pdf, handle_file
+from .statement_processor import process_bankstatement, SubmitTransactionRecord
+from .utils import handle_file, get_account_types, get_unlabeled_transactions_period
 from django.views import View
 from json import dumps
 from django.core import serializers
 from calendar import monthrange
-
-
+import tabula
+import pandas as pd
 # Create your views here.
 def login_view(request):
     if request.method == "POST":
@@ -78,7 +78,6 @@ def register_view(request):
             user = User.objects.create_user(username, email, password)
             user.save()
         except IntegrityError as e:
-            print(e)
             return render(request, "ExpenseTracker/register.html", {
                 "message": "Email address already taken."
             })
@@ -154,9 +153,14 @@ class CRUDBankstatementAPI(View):
         user = User.objects.get(pk=request.user.id)
         response = []
 
-        start_period = datetime(int(data.get('start_period').split("-")[1]), int(data.get('start_period').split("-")[0])+1, 1)
-        _, last_day = monthrange(int(data.get('end_period').split("-")[1]), int(data.get('end_period').split("-")[0])+1)
-        end_period = datetime(int(data.get('end_period').split("-")[1]), int(data.get('end_period').split("-")[0])+1, last_day)
+        start_month = int(data.get('start_period').split("-")[0].strip("0"))
+        start_year = int(data.get('start_period').split("-")[1])
+        end_month = int(data.get('end_period').split("-")[0].strip("0"))
+        end_year = int(data.get('end_period').split("-")[1])
+        
+        start_period = datetime(start_year, start_month+1, 1)
+        _, last_day = monthrange(end_year, end_month+1)
+        end_period = datetime(end_year, end_month+1, last_day)
         earliest_transaction_date = TransactionRecord.objects.filter(user=user).aggregate(Min('date'))['date__min']
         latest_transaction_date = TransactionRecord.objects.filter(user=user).aggregate(Max('date'))['date__max']
         
@@ -200,129 +204,88 @@ class CRUDBankstatementAPI(View):
     def post(self, request):
         data = json.loads(request.body)
         user = User.objects.get(pk=request.user.id)
-
-        submit_balance_summaries(user, data.get('balance_summary'))
-
-        status_obj = submit_transactions(user, data.get('transactions'))
-        if status_obj['saved'] == status_obj['total']:        
-            return JsonResponse({
-                "status":200,
-                "message":"Successfully saved {0} / {1} data".format(status_obj['saved'], status_obj['total']),
-            })
+        RESPONSE = {}
+        transaction_data = SubmitTransactionRecord(data.get('transactions'), data.get('balance_summary'), user)
+        submit = transaction_data.submit()
+        if submit['failed'] > 0:
+            RESPONSE = {
+                "error": "Failed to submit all transactions",
+                "data": submit,
+            }
         else:
-            return JsonResponse({
-                "status":400,
-                "message":"Only {0} / {1} data successfully saved".format(status_obj['saved'], status_obj['total']),
-                "failure": status_obj['failure'],
-            })
-    
+            RESPONSE = {
+                "success": "Saved all transactions",
+                "data": submit,
+            }
+        return JsonResponse(RESPONSE)
+
     def put(self, request):
-        return
+        data = json.loads(request.body)
+        user = User.objects.get(pk=request.user.id)
+        transaction_data = SubmitTransactionRecord(data.get('transactions'), data.get('balance_summary'), user)
+        update = transaction_data.update()
+        if update['failed'] > 0:
+            RESPONSE = {
+                "error": "Failed to update transactions",
+                "data": update,
+            }
+        else:
+            RESPONSE = {
+                "success": "Transactions Updated",
+                "data": update,
+            }
+        return JsonResponse(RESPONSE)
+
+    def delete(self, request):
+        data = json.loads(request.body)
+        user = User.objects.get(pk=request.user.id)
+        transaction_data = SubmitTransactionRecord(data.get('transactions'), data.get('balance_summary'), user)
+        delete = transaction_data.delete()
+        return delete
 
 @login_required
 def process_bankstatement_api(request):
     if request.method == "POST":
-        RESPONSE = {}
-
         uploaded_pdf = request.FILES.get('uploaded_file')
         bank_code = request.POST.get('bank')
-        input_value = request.POST.get('input_value')
-        period = {
-            "month": request.POST.get('month'),
-            "year": request.POST.get('year')
+        original_pdf_info = {
+            "file": uploaded_pdf,
+            "bank_code": bank_code
         }
-        if input_value and cache.get('original_pdf'):
-            input_value = input_value.split(',')
-            original_pdf_info = cache.get('original_pdf')
-            bank_code = original_pdf_info["bank_code"]
-            file_object = handle_file(original_pdf_info["file"],"OBJECT")
-        elif not input_value and uploaded_pdf and bank_code:
-            original_pdf_info = {
-                "file": uploaded_pdf,
-                "bank_code": bank_code
+        cache.set('original_pdf', original_pdf_info, timeout=300)
+        file_object = handle_file(uploaded_pdf, "OBJECT")
+        
+        result = process_bankstatement(file_object, bank_code=bank_code, vue_config=True)
+        if "error" in result:
+            return JsonResponse(result, safe=False)
+        
+        user = User.objects.get(pk=request.user.id)
+        transaction_data = SubmitTransactionRecord(result['data']['transactions'], result['data']['balance_summaries'], user)
+        submit = transaction_data.submit()
+        if submit['failed'] > 0:
+            RESPONSE = {
+                "error": "Failed to submit transactions",
             }
-            cache.set('original_pdf', original_pdf_info, timeout=300)
-            file_object = handle_file(uploaded_pdf, "OBJECT")
         else:
-            RESPONSE['redir_url'] = 'bankstatement'
-            return JsonResponse(RESPONSE, safe=False)
-
-        # Process uploaded PDF file
-        reader = PyPDF2.PdfReader(file_object)
-        transaction_data = process_bankstatement(bank_code, reader, input_value, period)
-        if not transaction_data['is_correct_pdf']:
-            RESPONSE["message"] = "Couldn't Load PDF! Please make sure you're uploading the right PDF file or have selected the correct bank"
-            return JsonResponse(RESPONSE, safe=False)
-
-        if transaction_data['is_valid']:
-            cache.set('transaction_data', transaction_data, timeout=900)
-            RESPONSE['redir_url'] = 'labeling'
-            return JsonResponse(RESPONSE, safe=False)
-        else:
-            RESPONSE["show_pdf"] = 'highlighted'
-            if not uploaded_pdf:
-                original_pdf_info = cache.get('original_pdf')
-                uploaded_pdf = original_pdf_info["file"]
-            file_buffer = handle_file(uploaded_pdf, "BUFFER")
-            output_pdf_bytes = highlight_pdf(file_buffer, bank_code, input_value)
-            file_buffer.seek(0)
-            cache.set('output_pdf_bytes', output_pdf_bytes, timeout=300)
-
-        RESPONSE["transaction_data"] = transaction_data
-
-        response = JsonResponse(RESPONSE)
-        return response
+            RESPONSE = {
+                "success": "Saved all transactions",
+                "redir":"labeling"
+            }
+        return JsonResponse(RESPONSE, safe=False)
 
 @method_decorator(login_required, name='dispatch')
 class TransactionLabelingView(View):
-    def prepare_data_for_view(self, transaction_data):
-        modified_transactions = []
-        for idx, transaction in enumerate(transaction_data):
-            transaction["select"]= 0
-            transaction["account_type"]= None
-            transaction["key"]= idx
-            transaction["error"] = False
-            modified_transactions.append(transaction)
-        return modified_transactions
-    
     def get(self, request):
         user = User.objects.get(pk=request.user.id)
-        preset_account_types = AccountCategory.objects.filter(is_preset=True).values_list('account_type', flat=True)
-        user_account_types = AccountCategory.objects.filter(user=user).values_list('account_type', flat=True)
-        preset_account_types_list = list(preset_account_types)
-        user_account_types_list = list(user_account_types)
+
+        account_types = get_account_types(user)
+        unlabeled_periods = get_unlabeled_transactions_period(user)
 
         CONTEXT= {
-            "transaction_data": None,
-            "balance_summary": None,
-            "account_types": json.dumps(preset_account_types_list + user_account_types_list),
+            "account_types": json.dumps(account_types),
+            "unlabeled_periods": json.dumps(unlabeled_periods)
         }
-
-        transaction_data = cache.get("transaction_data")
-        if transaction_data:
-            CONTEXT["transaction_data"] = json.dumps(self.prepare_data_for_view(transaction_data['transactions']))
-            CONTEXT["balance_summary"] = json.dumps({
-                    transaction_data['period_key']:{
-                        "month": transaction_data['period_key'].split('-')[0],
-                        "year": transaction_data['period_key'].split('-')[1],
-                        "starting_balance":transaction_data['stated_balance']['starting_balance'],
-                        "ending_balance": transaction_data['stated_balance']['ending_balance'],
-                        "credit_mutation": transaction_data['stated_balance']['mutasi_cr'],
-                        "debit_mutation": transaction_data['stated_balance']['mutasi_db'],
-                    }
-                })
         return render(request, "ExpenseTracker/transaction_labeling.html", CONTEXT)
-
-@login_required
-def statement_parser(request):
-    '''
-    !!!UNDER DEVELOPMENT!!!
-    '''
-    if request.method == "PUT":
-        # put new value to StatementParser
-        input_value = request.POST.get('input_value').split(',')
-        for value in input_value:
-            StatementParser.objects.create(value=value)
 
 @login_required
 def display_pdf(request, pdf_type="original"):

@@ -77,6 +77,7 @@ class TransactionRecord(models.Model):
             "info": self.info,
             "amount": str(self.amount),
             "account_type": self.account_type.account_type if self.account_type else None,
+            "bank_code": self.bank.bank_code,
             "date": str(self.date),
             "entry": self.entry,
             "details": self.details,

@@ -30,26 +30,29 @@
 
 <script>
 export default {
-    emits: ['response'],
-    data(){
-      return{
-        popup: false,
-        text: "",
-        title: "",
-        resolveFunc: null
-      }
-    },
-    methods:{
-      toggleModal(messageObj) {
-        this.title = messageObj.title
-        this.text = messageObj.text
-        this.popup = true
-      },
-      handleResp(resp) {
-        this.popup = false;
-        this.$emit('response', resp);
-      }
-    }
-}
-
+ emits: ['response'],
+ data() {
+   return {
+     popup: false,
+     text: "",
+     title: "",
+     resolveFunc: null,
+   };
+ },
+ methods: {
+   toggleModal(messageObj) {
+     this.title = messageObj.title;
+     this.text = messageObj.text;
+     this.resolveFunc = messageObj.resolve; // Store the resolve function
+     this.popup = true;
+   },
+   handleResp(resp) {
+     this.popup = false;
+     if (this.resolveFunc) {
+       this.resolveFunc(resp); // Call the resolve function with the user's response
+     }
+     this.resolveFunc = null; // Reset the resolve function
+   },
+ },
+};
 </script>

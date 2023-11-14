@@ -1,265 +1,321 @@
 import re
-from typing import List
+from typing import List, Dict, Union
 from .models import StatementParser, TransactionRecord, AccountCategory, Bank, BalanceRecord
-from .utils import process_raw_pages, clean_transaction_details, cleanse_number, track_actual_changes, highlight_pdf
+from .utils import process_raw_pages, clean_transaction_details, cleanse_number, month_converter
 import json
 from datetime import date, datetime
+import tabula
+import pandas as pd
+import logging
+from django.db.models import Q
 
-def verify_pdf_is_bank_statement(parsed_pages ,parse_value):
-    matched_keyword = 0
-    for current_page in parsed_pages:
-        for keyword in parse_value:
-            if keyword in current_page:
-                matched_keyword += 1
+class BCAStatementProcessor:
+    def __init__(self, file_obj: str):
+        tmp_trash_value = re.split(',', StatementParser.objects.filter(bank_code="BCA").filter(category="trash_value").values()[0]['pattern'])
+        self.trash_value: List[str] = '|'.join(tmp_trash_value)
+        self.file_obj = file_obj
+        self.period_info: Dict[str] = {}
+        self.df_body: List[pd.DataFrame] = tabula.read_pdf(file_obj, pages="all",columns=[71.3, 190, 295.5, 325, 460], area=[228.34, 0, 841.68, 555.44])
+    
+    def extract_period_info(self) -> Dict[str, Union[str, int]]:
+        df: pd.DataFrame = tabula.read_pdf(self.file_obj, pages="1", area=[100, 272.5, 200.34, 555.44])[0].transpose()
+        new_columns = df.iloc[0]
+        df.columns = new_columns
+        df_header = df.to_dict("records")[-1]
+        try:
+            tmp_period = df_header["PERIODE"].split(" ")
+            period_info: Dict[str, Union[str, int]] = {
+                "month": month_converter(tmp_period[0]),
+                "year": tmp_period[1],
+            }
+        except errorParsingHeader as e:
+            logging.error("Error extracting BCA statement's header: %s", e)
+            return {"error": "Error extracting BCA statement's header", "message":str(e)}
+        self.period_info = period_info
+        return period_info
 
-    not_bank_statement = matched_keyword < len(parse_value)*0.8
-    if not_bank_statement:
-        return False
-    else:
+    def verify_pdf_file(self) -> bool:
+        columns: List[str] = ['TANGGAL', 'KETER','ANGAN', "CBG", "MUTASI", "SALDO"]
+        for column in columns:
+            df_columns = self.df_body[0].columns.tolist()
+            if column not in df_columns:
+                return False
         return True
     
-def process_bca_statement(parsed_pages, trash_value, parse_value, period = None):
-    statement_transactions = []
-    period_key = None
-    stated_balance = {}
-    actual_balance = {
-        "mutasi_cr": 0,
-        "mutasi_db": 0
-    }
-    for current_page in parsed_pages:
-        for i in range(len(current_page)-2):            
-            trf_date = re.search("(\d\d/\d\d)", current_page[i])
-            transaction_records = {}
-
-            # Identify and organize transaction informations
-            if trf_date and current_page[i+2] in parse_value and current_page[i+1] == ' ':
-                day = int(current_page[i].split("/")[0])
-                month = int(current_page[i].split("/")[1])
-                year = int(period['year'])
-                date_string = f"{day:02d}-{month:02d}-{year:04d}"
-                period_key = f"{month:02d}-{year:04d}"
+    def process_bankstatement(self, vue_config=False):
+        transactions_records = []
+        stated_balance = {
+            "bank_code":"BCA"
+        }
+        calculated_balance = {
+            "credit_mutation":0,
+            "debit_mutation":0
+        }
+        for page in self.df_body:
+            df = page.rename(columns={
+                'KETER': 'INFO',
+                'ANGAN': 'KETERANGAN'
+                }).fillna("")
+            for idx, row in df.iterrows():
+                # Edge Cases
+                '''
+                1. Skip rows with "Bersambung ke Halaman berikut"
+                2. Bunga doesn't have DB or CR specified, assign it to Credit
+                3. Skip the first row containing "SALDO AWAL"
+                '''
                 
-                transaction_records = {
-                    'date': date_string,
-                    'info': current_page[i+2]
-                }
-                dirty_transaction_details = current_page[i+3]  
-                                
-                try: 
-                    entry_type = re.findall("(CR|DB)", transaction_records['info'] + dirty_transaction_details)[0]
-                    if entry_type == 'CR':
-                        transaction_records['entry'] = 'Credit'
-                    elif entry_type == 'DB':
-                        transaction_records['entry'] = 'Debit'
-                except IndexError:
-                    # Special cases
-                    if transaction_records['info'] == 'KR OTOMATIS':
-                        transaction_records['entry'] = 'Credit'
+                if "Bersambung ke Halaman berikut" in row["MUTASI"]+row["SALDO"]:
+                    continue
+                
+                row_balance = cleanse_number(row["SALDO"]) if row["SALDO"] else 0
+                
+                if "SALDO AWAL" in row["INFO"]: 
+                    stated_balance["starting_balance"] = row_balance
+                    continue
+
+                match = re.search("(CR|DB)", row["INFO"] + row["MUTASI"])
+                row_entry =  match.group(1) if match else '-'
+                if row_entry != "-":
+                    row_entry = "Credit" if row_entry == "CR" else "Debit"
+                elif row_entry == "-" and re.search("BUNGA", row['INFO']):
+                    row_entry = "Credit"
+                row_amount = cleanse_number(row["MUTASI"].split(" ")[0]) if row["MUTASI"] else 0
+
+                if row['TANGGAL']:
+                    day = int(row["TANGGAL"].split("/")[0])
+                    month = int(row["TANGGAL"].split("/")[1])
+                    year = int(self.period_info["year"])
+                    row_date = f"{day:02d}-{month:02d}-{year:04d}"
+                    row_details = " ".join(re.split(self.trash_value, row["KETERANGAN"])).strip()
+                    tmp = {
+                        "pk":None,
+                        "amount": row_amount,
+                        "info": row["INFO"],
+                        "account_type": None,
+                        "date": row_date,
+                        "entry": row_entry,
+                        "details": row_details,
+                        "bank_code":"BCA"
+                    }
+                    if vue_config:
+                        tmp.update({
+                            "select":False,
+                            "error": False,
+                        })
+                    transactions_records.append(tmp)
+                    if row_entry == "Credit":
+                        calculated_balance["credit_mutation"] += row_amount
                     else:
-                        transaction_records['entry'] = '-'
+                        calculated_balance["debit_mutation"] += row_amount
+                else:
+                    is_statements_footer = (row['INFO'] and row['KETERANGAN'] and row['CBG'] and ['MUTASI'])
+                    if is_statements_footer:
+                        footer_list = {
+                            "SALDO AWAL":"starting_balance",
+                            "SALDO AKHIR": "ending_balance",
+                            "MUTASI CR":"credit_mutation",
+                            "MUTASI DB":"debit_mutation",
+                        }
+                        row_name = row["INFO"]+row['KETERANGAN'].split(":")[0].strip()
+                        row_val = cleanse_number(row['CBG']+row['MUTASI'])
+                        if row_name in footer_list:
+                            row_name = footer_list[row_name]
+                        stated_balance[row_name] = row_val
+                    else:
+                        transactions_records[-1]['details']+=" "+row["KETERANGAN"]
+                        transactions_records[-1]['details'].strip()
 
+        if (calculated_balance['credit_mutation'] == stated_balance['credit_mutation'] and
+         stated_balance['debit_mutation'] == calculated_balance['debit_mutation']):
+            period_key= "{:02}-{:04}".format(self.period_info["month"], self.period_info["year"])
+            stated_balance.update(self.period_info)
+            out =  {
+                'data':{
+                    'transactions':transactions_records,
+                    "balance_summaries":[stated_balance]
+                }
+            }
+        else:
+            out = {
+                'error': 'missmatch between caluclated & stated balance',
+                'data': {
+                    "calculated_balance": calculated_balance,
+                    "stated_balance": stated_balance
+                }
+            }
+            print("ERRORR; ", out)
+        return out
+
+class SubmitTransactionRecord:
+    def __init__(self, transactions, balance_summaries, user: None) -> None:
+        self.user = user
+        self.transactions = transactions
+        self.balance_summaries = balance_summaries
+
+    def submit_transactions(self) -> Dict[str, Union[str, int]]:
+        acknowledgement = {}
+        failure = []
+        for transaction in self.transactions:
+            bank_code = Bank.objects.filter(bank_code=transaction['bank_code']).get()
+            account_category = AccountCategory.objects.filter(
+                account_type=transaction['account_type'], 
+                user=self.user
+                ).get() if transaction['account_type'] else None
+            balance_summary = BalanceRecord.objects.filter(
+                user=self.user,
+                bank=bank_code,
+                month=transaction['date'].split('-')[1],
+                year=transaction['date'].split('-')[2]
+            ).get()
+            if balance_summary:
                 try:
-                    transaction_records['amount'] = [x for x in dirty_transaction_details.split() if re.search("(\d\d[.]\d\d$)", x)][0]
-                except IndexError:
-                    transaction_records['amount'] = '-'
+                    new_record = TransactionRecord.objects.create(
+                        user=self.user,
+                        bank=bank_code,
+                        info=transaction['info'],
+                        entry=transaction['entry'],
+                        amount=transaction['amount'],
+                        details=transaction['details'],
+                        balance_summary=balance_summary,
+                        date=datetime.strptime(transaction['date'].split()[0], "%d-%m-%Y"),
+                        account_type=account_category,
+                    )
+                    acknowledgement[new_record.pk] = transaction['info'] + transaction['date']
+                except Exception as e:
+                    logging.error("Error saving transaction: %s", e)
+                    failure.append(transaction)
+                    continue
+            else:
+                failure.append(transaction)
 
-                transaction_records['bank_code'] = 'BCA'
-
-                # Record stated balance changes
-                if "SALDO AWAL" in dirty_transaction_details:
-                    tmp_saldo_awal = re.split('SALDO AWAL', dirty_transaction_details)[1].split()
-                    stated_balance['starting_balance'] = cleanse_number([x for x in tmp_saldo_awal if re.search("(\d\d[.]\d\d$)", x)][0])
-                if "SALDO AKHIR" in dirty_transaction_details:
-                    tmp_saldo_akhir = re.split('SALDO AKHIR', dirty_transaction_details)[1].split()
-                    stated_balance['ending_balance'] = cleanse_number([x for x in tmp_saldo_akhir if re.search("(\d\d[.]\d\d$)", x)][0])
-                if "MUTASI CR" in dirty_transaction_details:
-                    tmp_mutasi_cr = re.split('MUTASI CR', dirty_transaction_details)[1].split()
-                    stated_balance['mutasi_cr'] = cleanse_number([x for x in tmp_mutasi_cr if re.search("(\d\d[.]\d\d$)", x)][0])
-                if "MUTASI DB" in dirty_transaction_details:
-                    tmp_mutasi_db = re.split('MUTASI DB', dirty_transaction_details)[1].split()
-                    stated_balance['mutasi_db'] = cleanse_number([x for x in tmp_mutasi_db if re.search("(\d\d[.]\d\d$)", x)][0])
-
-                # Remove trash values from transaction detail
-                transaction_records = clean_transaction_details(transaction_records, trash_value, dirty_transaction_details)
-
-                # Turn transaction amount to decimal
-                transaction_records['amount'] = cleanse_number(transaction_records['amount'])
-
-                # Track actual balance changes
-                actual_balance = track_actual_changes(transaction_records, actual_balance)
-
-                # Compile statement transaction
-                if transaction_records["info"] != "SALDO AWAL":
-                    statement_transactions.append(transaction_records)
-
-    return statement_transactions, stated_balance, actual_balance, period_key
-
-def verify_processed_transactions(statement_transactions, stated_balance, actual_balance):
-    '''
-    param: statement_transactions: List of processed statement transactions
-    param: stated_balance: Dict of stated balance changes
-    param: actual_balance: Dict of actual balance changes
-    return: suspicious_transactions: List of suspicious transactions
-    '''
-    # Difference in recorded and actual mutasi
-    db_difference = stated_balance['mutasi_db'] - actual_balance['mutasi_db']
-    cr_difference = stated_balance['mutasi_cr'] - actual_balance['mutasi_cr']
-
-    # Calculate average detail length
-    average_detail_length = 0
-    for transaction in statement_transactions:
-        average_detail_length += len(transaction['details'])
-    average_detail_length /= len(statement_transactions)
-    
-    # Check for imbalance in stated vs actual balance
-    suspicious_transactions = []
-    if db_difference + cr_difference != 0:
-        # Flag suspicious transactions
-        for transaction in statement_transactions:
-
-            # Transactions without entry type
-            if transaction['entry'] != "Credit" and transaction['entry'] != "Debit":
-                transaction['suspicion'] = 'Cannot identify entry type'
-                suspicious_transactions.append(transaction)
-
-            # Transactions without amount
-            elif transaction['amount'] == '-':
-                transaction['suspicion'] = 'Cannot identify amount'
-                suspicious_transactions.append(transaction)
-
-            # Above average transaction details length 
-            elif len(transaction['details']) > average_detail_length * 2 and transaction['info'] !='SALDO AWAL' and transaction['info'] !='BIAYA ADM':
-                transaction['suspicion'] = 'Potentially unregistered transaction type'
-                suspicious_transactions.append(transaction)
-
-        return False, suspicious_transactions
-    else:
-        return True, suspicious_transactions
-
-def process_bankstatement(bank_code, reader, input_value= None, period = None):
-    # Get additional input variable
-    parse_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "parse_value").values()[0]['pattern'])
-    trash_value = re.split(',', StatementParser.objects.filter(bank_code = bank_code).filter(category = "trash_value").values()[0]['pattern'])
-    
-    if input_value:
-        for value in input_value:
-            parse_value.append(value)
-    parsed_pages = process_raw_pages(reader.pages, parse_value)
-    is_bankstatement = verify_pdf_is_bank_statement(parsed_pages ,parse_value)
-    if not is_bankstatement:
         return {
-            'is_correct_pdf': is_bankstatement
+            "saved": len(acknowledgement),
+            "failed": len(failure),
+            "total": len(self.transactions),
+            "pk_map": acknowledgement,
+            "failure": failure
+        }
+
+    def submit_balance_summaries(self):
+        acknowledgement = {}
+        failure = []
+        for bs in self.balance_summaries:
+            bank_code = Bank.objects.filter(bank_code=bs['bank_code']).get()
+            existing_record = BalanceRecord.objects.filter(
+                user=self.user,
+                bank=bank_code,
+                month=bs['month'],
+                year=bs['year']
+            ).exists()
+            if not existing_record:
+                try:
+                    new_record = BalanceRecord.objects.create(
+                        user=self.user,
+                        month=bs['month'],
+                        year=bs['year'],
+                        bank=bank_code,
+                        ending_balance=bs['ending_balance'],
+                        starting_balance=bs['starting_balance'],
+                        credit_mutation=bs['credit_mutation'],
+                        debit_mutation=bs['debit_mutation']
+                    )
+                    acknowledgement[(bs['month'], bs['year'])] = new_record.pk
+                except Exception as e:
+                    logging.error("Error saving balance summary: %s", e)
+                    failure.append(bs)
+                    continue
+            else:
+                failure.append(bs)
+        return {
+            "saved": len(acknowledgement),
+            "failed": len(failure),
+            "total": len(self.balance_summaries),
+            "pk_map": acknowledgement,
+            "failure": failure
+        }
+
+    def submit(self):
+        output = self.submit_balance_summaries()
+        if output['failed'] > 0:
+            return output
+        
+        output = self.submit_transactions()
+        if output['failed'] > 0:
+            return output
+        return output
+    
+    def update(self):
+        acknowledgement = {}
+        failure = []
+        for transaction in self.transactions:
+            try:
+                bank_code = Bank.objects.filter(bank_code=transaction['bank_code']).get()
+                account_category = AccountCategory.objects.filter(
+                    Q(account_type=transaction['account_type']),
+                    Q(user=self.user) | Q(is_preset=True)
+                ).get() if transaction['account_type'] else None
+                exists = TransactionRecord.objects.filter(pk=transaction['pk'], user=self.user, bank=bank_code).first()
+                if exists:
+                    exists.account_type = account_category
+                    exists.save()
+                    acknowledgement[exists.pk] = transaction['account_type']
+            except Exception as e:
+                    logging.error("Error updating transactions: %s", e)
+                    failure.append(transaction)
+                    continue
+        return {
+            "saved": len(acknowledgement),
+            "failed": len(failure),
+            "total": len(self.transactions),
+            "pk_map": acknowledgement,
+            "failure": failure
+        }
+
+    def delete(self):
+        # Delete transactions & delete balance record/summary with empty transaction list
+        acknowledgement = {}
+        response_transaction = []
+        response_balance_summaries = []
+        for transaction in self.transactions:
+            bank_code = Bank.objects.filter(bank_code=transaction['bank_code']).get()
+            exists = TransactionRecord.objects.filter(pk=transaction['pk'], user=self.user, bank=bank_code).first()
+            if exists:
+                exists.delete()
+                acknowledgement[exists.pk] = exists.pk
+        for bs in self.balance_summaries:
+            bank_code = Bank.objects.filter(bank_code=bs['bank_code']).get()
+            exists = BalanceRecord.objects.filter(pk=bs['pk'], user=self.user, bank=bank_code).first()
+            count = TransactionRecord.objects.filter(pk=bs['pk'], user=self.user, bank=bank_code).count()
+            if exists and count < 1:
+                exists.delete()
+                acknowledgement[exists.pk] = exists.pk
+            elif exists:
+                transaction = TransactionRecord.objects.filter(balance_summary=exists, user=self.user, bank=bank_code)
+                serialized_transactions = [transaction.serialize() for transaction in transactions]
+                response_transaction.extend(serialized_transactions)
+                response_balance_summaries.append(exists.serialize())
+        return {
+            "deleted": len(acknowledgement),
+            "transaction": response_transaction
+        }
+
+def process_bankstatement(reader, bank_code = "BCA", vue_config=False):
+    processor = None
+    if bank_code == "BCA":
+        processor = BCAStatementProcessor(reader)
+    else:
+        return {
+            "error": "Bank {0} is not supported yet".format(bank_code)
+        }
+
+    if not processor.verify_pdf_file():
+        return {
+            "error": "Failed to verify statement PDF"
         }
     
-    # Define output variables
-    statement_transactions = []
-    stated_balance = {}
-    actual_balance = {}
-    suspicious_transactions = []
+    period_info = processor.extract_period_info()
+    if "error" in period_info:
+        return period_info
 
-    # Process statement according to bank code
-    if bank_code == "BCA":
-        statement_transactions, stated_balance, actual_balance, period_key = process_bca_statement(parsed_pages, trash_value, parse_value, period)
-    else:
-        return
-    
-    # Check whether parsed transactions are valid
-    is_valid, suspicious_transactions = verify_processed_transactions(statement_transactions, stated_balance, actual_balance)
-    parse_value.remove("\d\d/\d\d")
-    return {
-        "transactions": statement_transactions,
-        "period_key": period_key,
-        "stated_balance": stated_balance,
-        "actual_balance": actual_balance,
-        "suspicious_transactions": suspicious_transactions,
-        "is_valid": is_valid,
-        "is_correct_pdf": is_bankstatement,
-        "parse_value": parse_value
-    }
-
-def submit_transactions(user, statement_transactions):
-    acknowledgement = {}
-    failure = []
-
-    for transaction in statement_transactions:
-        existing_record = TransactionRecord.objects.filter(
-            user=user,
-            bank__bank_code=transaction['bank_code'],
-            info=transaction['info'],
-            entry=transaction['entry'],
-            amount=transaction['amount'],
-            details=transaction['details'],
-            date=datetime.strptime(transaction['date'].split()[0], "%d-%m-%Y"),
-            account_type__account_type=transaction['account_type']
-        ).first()
-
-        if existing_record:
-            existing_record.account_type = AccountCategory.objects.filter(account_type=transaction['account_type']).get()
-            existing_record.save()
-            acknowledgement[existing_record.pk] = transaction['info'] + transaction['date']
-        else:
-            try:
-                new_record = TransactionRecord.objects.create(
-                    user=user,
-                    bank=Bank.objects.filter(bank_code=transaction['bank_code']).get(),
-                    info=transaction['info'],
-                    entry=transaction['entry'],
-                    amount=transaction['amount'],
-                    details=transaction['details'],
-                    date=datetime.strptime(transaction['date'].split()[0], "%d-%m-%Y"),
-                    account_type=AccountCategory.objects.filter(account_type=transaction['account_type']).get()
-                )
-                acknowledgement[new_record.pk] = transaction['info'] + transaction['date']
-            except:
-                failure.append(transaction)
-                continue
-
-    return {
-        "saved": len(acknowledgement),
-        "failed": len(failure),
-        "total": len(statement_transactions),
-        "pk_map": acknowledgement,
-        "failure": failure
-    }
-
-
-def submit_balance_summaries(user, balance_summaries):
-    acknowledgement = {}
-    failure = []
-    
-    for bs in balance_summaries:
-        existing_record = BalanceRecord.objects.filter(
-            user=user,
-            month=bs['month'],
-            year=bs['year'],
-            ending_balance=bs['ending_balance'],
-            starting_balance=bs['starting_balance'],
-            credit_mutation=bs['credit_mutation'],
-            debit_mutation=bs['debit_mutation']
-        ).first()
-
-        if existing_record:
-            acknowledgement[(bs['month'], bs['year'])] = existing_record.pk
-        else:
-            try:
-                new_record = BalanceRecord.objects.create(
-                    user=user,
-                    month=bs['month'],
-                    year=bs['year'],
-                    ending_balance=bs['ending_balance'],
-                    starting_balance=bs['starting_balance'],
-                    credit_mutation=bs['credit_mutation'],
-                    debit_mutation=bs['debit_mutation']
-                )
-                acknowledgement[(bs['month'], bs['year'])] = new_record.pk
-            except:
-                failure.append(bs)
-                continue
-    
-    return {
-        "saved": len(acknowledgement),
-        "failed": len(failure),
-        "total": len(balance_summaries),
-        "pk_map": acknowledgement,
-        "failure": failure
-    }
+    compiled_result = processor.process_bankstatement(vue_config)
+    return compiled_result

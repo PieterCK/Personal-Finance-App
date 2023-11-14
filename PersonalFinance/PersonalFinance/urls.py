@@ -30,7 +30,6 @@ urlpatterns = [
     # bankstatement view API  endpoints
     path('bankstatement/api/process_bankstatement', views.process_bankstatement_api, name='process_bankstatement'),
     path('bankstatement/api/display_pdf/<str:pdf_type>', views.display_pdf, name="highlighted_pdf"),
-    path('bankstatement/api/statement_parser', views.statement_parser, name='statement_parser'),
     path('bankstatement/api/CRUDBankstatementAPI', views.CRUDBankstatementAPI.as_view(), name='CRUDBankstatementAPI'),
 
     # transaction labelling
