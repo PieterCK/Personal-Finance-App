@@ -7,6 +7,7 @@ import io
 from django.db.models import Q , Min, Max
 from django.db.models.functions import ExtractMonth, ExtractYear
 from datetime import date, datetime
+from django.db.models import Sum
 
 def month_converter(month:str) -> Union [int,bool]:
     month_mapping = {
@@ -115,7 +116,6 @@ def get_unlabeled_transactions_period(user):
         earliest_month=Min(ExtractMonth('date')),
         earliest_year=Min(ExtractYear('date'))
     )
-    print("earliers: ", earliest_unlabelled_date)
     # If there are unlabelled transactions, set the startPeriod and endPeriod
     if earliest_unlabelled_date['earliest_month'] is not None:
         startPeriod = date(earliest_unlabelled_date['earliest_year'], earliest_unlabelled_date['earliest_month']-1, 1)
@@ -127,3 +127,8 @@ def get_unlabeled_transactions_period(user):
     else:
         result = None
     return result
+
+class TransactionDataFormatter:
+    def __init__(self, transaction_qset):
+        self.transaction_data = transaction_qset
+

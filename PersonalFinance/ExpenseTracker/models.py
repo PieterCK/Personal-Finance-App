@@ -87,26 +87,6 @@ class TransactionRecord(models.Model):
         }
         return serialized_data
     
-    @classmethod
-    def get_account_type_sum(cls, start_date, end_date):
-        account_type_sums = cls.objects.filter(date__gte=start_date, date__lte=end_date).values('account_type__account_type').annotate(
-            total_amount=Sum('amount')
-        )
-
-        data = {
-            "labels": [],
-            "datasets": [{
-                "backgroundColor": ['#41B883', '#E46651', '#00D8FF', '#DD1B16', '#FFCE56', '#7D3C98', '#36D7B7', '#F39C12', '#2ECC71', '#9B59B6'],
-                "data": []
-            }]
-        }
-
-        for entry in account_type_sums:
-            data["labels"].append(entry['account_type__account_type'])
-            data["datasets"][0]["data"].append(entry['total_amount'])
-
-        return data
-    
     def __str__(self):
             return f"{self.date} - {self.entry} - {self.amount}"
     

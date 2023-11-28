@@ -143,7 +143,6 @@ class BCAStatementProcessor:
                     "stated_balance": stated_balance
                 }
             }
-            print("ERRORR; ", out)
         return out
 
 class SubmitTransactionRecord:

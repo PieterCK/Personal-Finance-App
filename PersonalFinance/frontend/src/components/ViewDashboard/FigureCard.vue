@@ -1,15 +1,12 @@
 <template>
-    <div class="w-full max-w-sm p-2 bg-white border border-gray-200 rounded-lg shadow sm:p-8 dark:bg-gray-800 dark:border-gray-700">
-        <h5 class="mb-4 text-xl font-medium text-gray-800 dark:text-gray-800">{{account_type}}</h5>
+    <div class="w-full max-w-sm p-3 bg-white border border-gray-200 rounded-lg shadow sm:p-3 dark:bg-gray-800 dark:border-gray-700">
+        <h5 class="mb-2 text-xl font-medium text-gray-800 dark:text-gray-800">{{account_type}}</h5>
         <div class="flex items-baseline text-gray-900 dark:text-white">
-                <span class="text-3xl font-semibold">{{formatPrice(this.current_value)}}</span>
+            <span class="text-3xm font-semibold">{{formatPrice(this.current_value)}}</span>
         </div>
         <div class="flow-root">
             <ul role="list" class="divide-y divide-gray-200 dark:divide-gray-700">
                 <li class="py-3 sm:py-4">
-                    <div class="flex items-center space-x-4">
-                        
-                    </div>
                 </li>
                 <li class="py-3 sm:py-4">
                     <div class="flex items-center space-x-4">

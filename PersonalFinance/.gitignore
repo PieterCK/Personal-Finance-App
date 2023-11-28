@@ -2,6 +2,7 @@
 *.pot
 *.pyc
 ExpenseTracker/__pycache__/
+ExpenseTracker/__pycache__/static/CACHE
 local_settings.py
 /db.sqlite3
 .env

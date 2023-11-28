@@ -1,16 +1,19 @@
 <script>
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import '@vuepic/vue-datepicker/dist/main.css';
 const baseUrl = process.env.VUE_APP_BASE_URL;
+
 import TransactionsTable from './TransactionsTable.vue';
 import TableHeaderCard from '../TableHeaderCard.vue';
-import VueDatePicker from '@vuepic/vue-datepicker';
-import PieChart from '../ViewDashboard/PieChart.vue';
-import '@vuepic/vue-datepicker/dist/main.css';
-import FigureCard from '../ViewDashboard/FigureCard.vue';
 import YesNoModal from '../YesNoModal.vue';
-import {toRaw} from 'vue'
 import SnackBar from '../SnackBar.vue';
+import CalendarCard from '../ViewDashboard/CalendarCard.vue';
+import PieChart from '../ViewDashboard/PieChart.vue';
+import FigureCard from '../ViewDashboard/FigureCard.vue';
+import LineChart from '../ViewDashboard/LineChart.vue';
+import HighlightCard from '../ViewDashboard/HighlightCard.vue';
+import BigLineChart from '../ViewDashboard/BigLineChart.vue';
 
 export default {
   data(){
@@ -19,6 +22,8 @@ export default {
       transactions: [],
       balance_summaries: {},
       overlay:false,
+      line_chart_data:[],
+      pie_chart_data:[],
       main_table_headers:[
           {title:'Date', align:'start', sortable:true, key:'date'},
           {
@@ -37,11 +42,14 @@ export default {
   components:{
     TransactionsTable,
     TableHeaderCard,
-    VueDatePicker,
     FigureCard,
     PieChart,
     YesNoModal,
-    SnackBar
+    SnackBar,
+    LineChart,
+    HighlightCard,
+    BigLineChart,
+    CalendarCard
   },
   methods:{
     getTransactions(startPeriod = null, endPeriod = null){
@@ -57,21 +65,16 @@ export default {
         params.start_period = datePeriod[0];
         params.end_period = datePeriod[1];
       }
-      console.log("param: ", params)
       axios
       .get(getTransactionsUrl, { params })
       .then(response => {
           // Process the response data
           let data = response.data.data
-          let charts = response.data.charts
           this.balance_summaries = data.balance_summaries
-          this.transactions = data.transactions
-          console.log("balance summaries: ", data.balance_summaries)
+          this.transactions = data.transactions.sort()
           this.$refs.incomeCard.setUpFigureCard("Income", this.balance_summaries)
           this.$refs.expenseCard.setUpFigureCard("Expense", this.balance_summaries)
           this.$refs.balanceCard.setUpFigureCard("Balance", this.balance_summaries)
-          this.$refs.generalPieChart.setUpPieChart(charts.pie_chart)
-          
       })
       .catch(error => {
           // Handle any error that occurs
@@ -83,6 +86,9 @@ export default {
       if (index !== -1) {
         this.transactions.splice(index, 1, updatedItem);
       }
+    },
+    updateDate(newDate){
+      this.date = newDate
     },
     postTransactions(selected_items){
       axios.defaults.headers.common['X-CSRFToken'] = Cookies.get('csrftoken');
@@ -160,7 +166,7 @@ export default {
     getBalanceSummary(selectedItems){
       let period_keys = []
       let balance_summaries = []
-      let tmp_balance_summary = toRaw(this.balance_summaries)
+      let tmp_balance_summary = {...this.balance_summaries}
       
       for(const element of selectedItems){
         let tmp_date = element.date.split('-')

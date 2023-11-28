@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import vuetify from './plugins/vuetify'
+import VueApexCharts from "vue3-apexcharts";
 import { loadFonts } from './plugins/webfontloader'
 import { createVuetify } from 'vuetify'
 import ViewBankStatement from './components/ViewBankStatement/ViewBankStatement.vue'
@@ -13,5 +14,5 @@ export const vuetifyTheme = createVuetify({
 if (document.querySelector('#bankstatement_view')){
   createApp(ViewBankStatement).use(vuetify).mount('#bankstatement_view')
 } else if (document.querySelector('#transactionlabeling_view')){
-  createApp(ViewTransactionsLabeling).use(vuetify).mount('#transactionlabeling_view')
+  createApp(ViewTransactionsLabeling).use(vuetify).use(VueApexCharts).mount('#transactionlabeling_view')
 }

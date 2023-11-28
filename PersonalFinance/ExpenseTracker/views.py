@@ -8,14 +8,14 @@ from django.http import FileResponse, JsonResponse
 from django.core.cache import cache
 import PyPDF2
 import json
-from django.db.models import Q , Min, Max
+from django.db.models import Q , Min, Max, Sum
 from collections import defaultdict
-from django.db.models.functions import ExtractMonth, ExtractYear
+from django.db.models.functions import ExtractMonth, ExtractYear, TruncWeek
 from django.http import JsonResponse
 from datetime import datetime
 from .models import User, StatementParser, TransactionRecord, AccountCategory, BalanceRecord
 from .statement_processor import process_bankstatement, SubmitTransactionRecord
-from .utils import handle_file, get_account_types, get_unlabeled_transactions_period
+from .utils import handle_file, get_account_types, get_unlabeled_transactions_period, TransactionDataFormatter
 from django.views import View
 from json import dumps
 from django.core import serializers
@@ -93,33 +93,7 @@ def index(request):
 @method_decorator(login_required, name='dispatch')
 class BankstatementView(View):
     def get(self, request):
-        CONTEXT={
-        }
-        # Retrieve all unique months and years
-        months_and_years = TransactionRecord.objects.annotate(
-            month=ExtractMonth('date'),
-            year=ExtractYear('date')
-        ).values('month', 'year').distinct()
-
-        # Organize the months by year in a dictionary
-        months_by_year = defaultdict(list)
-
-        # Loop through the months and years
-        for entry in months_and_years:
-            month = entry['month']
-            year = entry['year']
-            # Append the month to the corresponding year
-            months_by_year[year].append(month)
-
-        # Print the dictionary
-        for year, months in months_by_year.items():
-            print(f"{year}: {months}")
-
-        cache.delete('output_pdf_bytes')
-
-        if cache.get('original_pdf'):
-            CONTEXT["show_pdf"] = 'original'
-        return render(request, "ExpenseTracker/bankstatement.html",CONTEXT)
+        return render(request, "ExpenseTracker/bankstatement.html")
 
 @method_decorator(login_required, name='dispatch')
 class CRUDBankstatementAPI(View):
@@ -177,7 +151,7 @@ class CRUDBankstatementAPI(View):
         if end_period.date() > latest_transaction_date:
             end_period = latest_transaction_date
 
-        transactions = TransactionRecord.objects.filter(user=user, date__range=[start_period, end_period])
+        transactions = TransactionRecord.objects.filter(user=user, date__range=[start_period, end_period]).order_by('date')
         balance_summaries = BalanceRecord.objects.filter(
             Q(user=user),
             Q(month__gte=start_period.month, year=start_period.year) &
@@ -186,16 +160,14 @@ class CRUDBankstatementAPI(View):
 
         serialized_transactions = [transaction.serialize() for transaction in transactions]
         serialized_bs = [bs.serialize() for bs in balance_summaries]
-        pie_chart_data = TransactionRecord.get_account_type_sum(start_period, end_period)
+        data_formatter = TransactionDataFormatter(transactions)
+
         response_data = {
             "status": 200,
             "message": "Successfully retrieved transactions",
             "data": {
                 'transactions':serialized_transactions,
                 'balance_summaries':serialized_bs
-            },
-            "charts": {
-                'pie_chart': pie_chart_data
             }
         }
         return JsonResponse(response_data)
@@ -280,7 +252,7 @@ class TransactionLabelingView(View):
 
         account_types = get_account_types(user)
         unlabeled_periods = get_unlabeled_transactions_period(user)
-
+        
         CONTEXT= {
             "account_types": json.dumps(account_types),
             "unlabeled_periods": json.dumps(unlabeled_periods)

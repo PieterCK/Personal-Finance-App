@@ -183,7 +183,6 @@
               account_type,
               bank_code
             }));
-          console.log("SELECTED ITEMS: ", selectedItems)
           // Warn user of the data about to be submmitted
           let result
           if (selectedItems.every((item) => item.account_type)) {
