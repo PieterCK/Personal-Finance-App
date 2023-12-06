@@ -1,31 +1,58 @@
 <template>
-    <div class="w-11/12 col-span-2 row-span-2 border border-gray-200 rounded-lg shadow dark:bg-gray-800 p-8 md:p-6">
-    <h5 class="mb-4 text-xl font-medium text-gray-800 dark:text-gray-800">Transaction Breakdown</h5>
-    
-      <div class="flex justify-center">
-        <v-combobox
-          chips
-          class="w-full max-w-sm p-5"
-          label="Content"
-          :items="contentTypeOpt"
-          v-model="contentType"
-          variant="solo-filled"
-        ></v-combobox>
-        <v-combobox
-          chips
-          class="w-full max-w-sm p-5"
-          label="Time Intervals"
-          :items="timeIntervalOpt"
-          v-model="timeInterval"
-          variant="solo-filled"
-        ></v-combobox>
+    <div class="w-full col-span-2 row-span-2 border border-gray-200 rounded-lg shadow dark:bg-gray-800 p-8 md:p-6">
+      <h5 class="mb-4 text-xl font-medium text-gray-800 dark:text-gray-800">Transaction Breakdown</h5>
+      <div class="border-gray-200 border-b dark:border-gray-700">
+        <ul class="flex flex-wrap text-sm justify-end font-medium text-center text-gray-500 dark:text-gray-400">
+          <li v-for="timeOpt in timeIntervalOpt" :key="timeOpt" class="me-2">
+            <button               
+              @click="selectDropDown('time_interval', timeOpt)"
+              :class="{ 'text-blue-600': timeInterval === timeOpt }"
+              class="inline-block px-4 py-3 rounded-lg hover:text-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800 dark:hover:text-white">{{timeOpt}}
+            </button>
+          </li>
+        </ul>
       </div>
       <apexchart v-if="finishedSetup" :options="chartOptions" :series="chartSeries"></apexchart>
-      <div class="flex justify-between">
-        <div class="flex items-center px-2.5 py-0.5 text-base font-semibold text-green-500 dark:text-green-500 text-center">
+      <div v-else role="status" class="p-4 animate-pulse md:p-6">
+        <div class="h-2.1 bg-gray-200 rounded-full dark:bg-gray-700 w-32 mb-2.5"></div>
+        <div class="flex items-baseline mt-4">
+            <div class="w-full bg-gray-200 rounded-t-lg h-72 dark:bg-gray-700"></div>
+            <div class="w-full h-56 ms-6 bg-gray-200 rounded-t-lg dark:bg-gray-700"></div>
+            <div class="w-full bg-gray-200 rounded-t-lg h-72 ms-6 dark:bg-gray-700"></div>
+            <div class="w-full h-64 ms-6 bg-gray-200 rounded-t-lg dark:bg-gray-700"></div>
+            <div class="w-full bg-gray-200 rounded-t-lg h-80 ms-6 dark:bg-gray-700"></div>
+            <div class="w-full bg-gray-200 rounded-t-lg h-72 ms-6 dark:bg-gray-700"></div>
+            <div class="w-full bg-gray-200 rounded-t-lg h-80 ms-6 dark:bg-gray-700"></div>
+        </div>
+        <span class="sr-only">Loading...</span>
+      </div>
+      <div class="grid grid-cols-1 items-center border-gray-200 border-t dark:border-gray-700 justify-between">
+        <div class="flex justify-around items-center pt-5">
+          <!-- Button -->
+          <button
+            id="dropdownDefaultButton"
+            data-dropdown-toggle="contentTypeOpt"
+            data-dropdown-placement="bottom"
+            class="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 text-center inline-flex items-center dark:hover:text-white"
+            type="button">
+            {{contentType}}
+            <svg class="w-2.5 m-2.5 ms-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+            </svg>
+          </button>
+          <!-- Dropdown menu -->
+          <div id="contentTypeOpt" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700">
+              <ul class="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="dropdownDefaultButton">
+                <li v-for="opt in contentTypeOpt" :key="opt">
+                  <button               
+                  @click="selectDropDown('content_type',opt)"
+                  class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">{{opt}}
+                  </button>
+                </li>
+              </ul>
+          </div>
         </div>
       </div>
-      <div class="grid grid-cols-1 items-center border-gray-200 border-t dark:border-gray-700 justify-between"></div>
     </div>
   </template>
   
@@ -35,26 +62,28 @@
   export default {
     props: {
       transactions_data: [],
+      balance_summaries: []
     },
     computed:{
         groupBy(){
             const tmp = {
                 "Account Type":'account_type',
                 "Income & Expense":'entry',
+                'Total Balance':'total_balance'
             }
             return tmp[this.contentType]
         },
     },
     data() {
       return {
-        contentTypeOpt: ['Account Type', 'Income & Expense'],
-        contentType: 'Account Type',
+        contentTypeOpt: ['Account Type', 'Income & Expense', 'Total Balance'],
+        contentType: 'Total Balance',
         timeIntervalOpt: ['Weekly', 'Monthly'],
         timeInterval: 'Weekly',
         template_chart_data:[],
         dataStore: null,
         finishedSetup:false,
-        chartSeries: [52.8, 26.8, 20.4],
+        chartSeries: [],
         chartOptions: {
           chart: {
             height: '100%',
@@ -141,6 +170,13 @@
     },
     methods: {
       formatCurrency,
+      selectDropDown(selected, option) {
+        if(selected == "content_type"){
+          this.contentType = option
+        }else if(selected == "time_interval"){
+          this.timeInterval = option
+        }
+      },
       updateData() {
         this.finishedSetup = false
         if (!this.transactions_data) return;
@@ -167,13 +203,13 @@
         const startDate = new Date(Date.parse(startDateStr));
         const endDate = new Date(Date.parse(endDateStr));
         const data = {};
-        for (let d = new Date(startDate); d <= endDate; d.setMonth(d.getMonth() + 1)) {
-          const month = d.getMonth();
+        for (let d = new Date(startDate); d <= endDate; d.setMonth(d.getMonth()+1)) {
+          const month = d.getMonth()+1;
           const year = d.getFullYear();
   
           if (this.timeInterval === 'Weekly') {
             for (let week = 1; week <= 4; week++) {
-              let key = `${month}-${year} Week-${week}`;
+              let key = `${month}-${year} W-${week}`;
               data[key] = 0;
             }
           } else if (this.timeInterval === 'Monthly') {
@@ -198,22 +234,38 @@
         */
         const { transactions_data, timeInterval, groupBy } = this;
         const out = new Map();
+        let total_account_balance = parseFloat(this.balance_summaries[0].starting_balance)
         transactions_data.forEach((transaction) => {
           const date = new Date(transaction.date);
-          const group = transaction[groupBy]=== null? "Unlabeled":transaction[groupBy];
+          const is_expense = transaction.entry==="Debit"
+
           let date_period;
           if (timeInterval === 'Weekly') {
             let tmp_week = Math.ceil(date.getDate() / 7);
             tmp_week = tmp_week > 4 ? 4 : tmp_week;
-            date_period = `${date.getMonth()}-${date.getFullYear()} Week-${tmp_week}`;
+            date_period = `${date.getMonth()+1}-${date.getFullYear()} W-${tmp_week}`;
           } else if (timeInterval === 'Monthly') {
-            let tmp_month = date.getMonth();
+            let tmp_month = date.getMonth()+1;
             date_period = `Month ${tmp_month}-${date.getFullYear()}`;
           }
-          if (!out.has(group)) {
-            out.set(group, { [date_period]: parseFloat(transaction.amount) });
-          } else {
-            out.get(group)[date_period] = (out.get(group)[date_period] || 0) + parseFloat(transaction.amount);
+          
+          if (groupBy === 'total_balance'){
+            const dict_key = "Total Balance"
+            const current_accumulated_amount = total_account_balance + (is_expense ? (-parseFloat(transaction.amount)):parseFloat(transaction.amount)) 
+
+            if (!out.has(dict_key)) {
+              out.set(dict_key, { [date_period]: current_accumulated_amount})
+            } else {
+              out.get(dict_key)[date_period] = current_accumulated_amount;
+            }
+            total_account_balance = current_accumulated_amount;
+          } else{
+            const group = transaction[groupBy]=== null? "Unlabeled":transaction[groupBy];
+            if (!out.has(group)) {
+              out.set(group, { [date_period]: parseFloat(transaction.amount) });
+            } else {
+              out.get(group)[date_period] = (out.get(group)[date_period] || 0) + parseFloat(transaction.amount);
+            }
           }
         });
         const result = Object.fromEntries(out);

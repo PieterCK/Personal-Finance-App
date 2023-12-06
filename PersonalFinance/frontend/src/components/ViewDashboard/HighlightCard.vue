@@ -64,7 +64,6 @@ export default {
     watch:{
         transactions_data(){
             this.updateData()
-            console.log(this.transactions_data)
         }
     },
     methods: {

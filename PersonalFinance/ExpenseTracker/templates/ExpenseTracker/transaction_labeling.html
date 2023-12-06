@@ -3,44 +3,45 @@
 
 {% block content %}
 <div id="transactionlabeling_view">
- <div class="mx-8 flex" >
-   <div class="w-2/3 p-4 border rounded-lg dark:border-black-700">
-      <div class="grid justify-items-center grid-cols-3 gap-4 mb-4">
-      <figure-card
-         ref="incomeCard"
-      ></figure-card>
-      <figure-card
-         ref="expenseCard"
-      ></figure-card>
-      <figure-card
-         ref="balanceCard"
-      ></figure-card>
-      <pie-chart 
-      :transactions_data="transactions"
-      ></pie-chart>
-      <figure-card
-      ref=""
-      ></figure-card>
+ <div class="mx-8 border rounded-lg dark:border-black-700" >
+   <h2 class="mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl dark:text-white">Overview</h2>
+   <div class="p-4 grid grid-cols-3 gap-2">
+      <div class="col-span-2">
+         <div class="grid justify-items-center grid-cols-3 gap-4 mb-4">
+            <figure-card
+               ref="incomeCard"
+            ></figure-card>
+            <figure-card
+               ref="expenseCard"
+            ></figure-card>
+            <figure-card
+               ref="balanceCard"
+            ></figure-card>
+            <pie-chart 
+            :transactions_data="transactions"
+            ></pie-chart>
+            <figure-card
+            ref=""
+            ></figure-card>
+            </div>
+            <div class="grid justify-items-center grid-cols-3 gap-4 mb-4">
+            <big-line-chart
+               :transactions_data="transactions"
+               :balance_summaries="balance_summaries"
+            >
+            </big-line-chart>
+            <figure-card
+            ref=""
+            ></figure-card>
+            </div>
       </div>
-      <div class="grid justify-items-center grid-cols-3 gap-4 mb-4">
-      <big-line-chart
-         :transactions_data="transactions"
-      >
-      </big-line-chart>
-      <figure-card
-      ref=""
-      ></figure-card>
+      <div class="col-span-1">
+         <highlight-card
+            :transactions_data="transactions"
+         >   
+         </highlight-card>
+      </div> 
    </div>
-   </div>
-   <div class="w-1/3">
-      <calendar-card
-         @update-date="updateDate"
-      ></calendar-card>
-      <highlight-card
-         :transactions_data="transactions"
-      >   
-      </highlight-card>
-   </div> 
 </div>
 <div class="text-center">
    <button class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 mr-2 mb-2 dark:bg-blue-600 dark:hover:bg-blue-700 focus:outline-none dark:focus:ring-blue-800" type="button" data-drawer-target="drawer-swipe" data-drawer-show="drawer-swipe" data-drawer-placement="bottom" data-drawer-edge="true" data-drawer-edge-offset="bottom-[60px]" aria-controls="drawer-swipe">
@@ -55,48 +56,11 @@
     <path d="M6.143 0H1.857A1.857 1.857 0 0 0 0 1.857v4.286C0 7.169.831 8 1.857 8h4.286A1.857 1.857 0 0 0 8 6.143V1.857A1.857 1.857 0 0 0 6.143 0Zm10 0h-4.286A1.857 1.857 0 0 0 10 1.857v4.286C10 7.169 10.831 8 11.857 8h4.286A1.857 1.857 0 0 0 18 6.143V1.857A1.857 1.857 0 0 0 16.143 0Zm-10 10H1.857A1.857 1.857 0 0 0 0 11.857v4.286C0 17.169.831 18 1.857 18h4.286A1.857 1.857 0 0 0 8 16.143v-4.286A1.857 1.857 0 0 0 6.143 10ZM17 13h-2v-2a1 1 0 0 0-2 0v2h-2a1 1 0 0 0 0 2h2v2a1 1 0 0 0 2 0v-2h2a1 1 0 0 0 0-2Z"/>
   </svg>Control Panel</h5>
    </div>
-   <div class="grid grid-cols-3 gap-4 p-4 lg:grid-cols-4">
-      <div class="p-4 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:hover:bg-gray-600 dark:bg-gray-700">
-         <div class="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-800">
-            <ul class="space-y-2 font-medium">
-               <li>
-                  <ul>
-                     <label class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group">Load Transactions</label>
-                     <vue-date-picker v-model="date" inline range month-picker :format="format"></vue-date-picker>
-                     <button
-                     @click="getTransactions"
-                     >Load</button>
-                  </ul>
-                  <button type="button" class="flex items-center w-full p-2 text-base text-gray-900 transition duration-75 rounded-lg group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700" aria-controls="dropdown-example" data-collapse-toggle="dropdown-example">
-                  </button>
-                  <ul id="dropdown-example" class="hidden py-2 space-y-2">
-                        <li>
-                           <a href="#" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Products</a>
-                        </li>
-                        <li>
-                           <a href="#" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Billing</a>
-                        </li>
-                        <li>
-                           <a href="#" class="flex items-center w-full p-2 text-gray-900 transition duration-75 rounded-lg pl-11 group hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">Invoice</a>
-                        </li>
-                  </ul>
-               </li>
-               <li>
-                  <a href="#" class="flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
-                     <svg class="flex-shrink-0 w-5 h-5 text-gray-500 transition duration-75 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
-                        <path d="M6.143 0H1.857A1.857 1.857 0 0 0 0 1.857v4.286C0 7.169.831 8 1.857 8h4.286A1.857 1.857 0 0 0 8 6.143V1.857A1.857 1.857 0 0 0 6.143 0Zm10 0h-4.286A1.857 1.857 0 0 0 10 1.857v4.286C10 7.169 10.831 8 11.857 8h4.286A1.857 1.857 0 0 0 18 6.143V1.857A1.857 1.857 0 0 0 16.143 0Zm-10 10H1.857A1.857 1.857 0 0 0 0 11.857v4.286C0 17.169.831 18 1.857 18h4.286A1.857 1.857 0 0 0 8 16.143v-4.286A1.857 1.857 0 0 0 6.143 10Zm10 0h-4.286A1.857 1.857 0 0 0 10 11.857v4.286c0 1.026.831 1.857 1.857 1.857h4.286A1.857 1.857 0 0 0 18 16.143v-4.286A1.857 1.857 0 0 0 16.143 10Z"/>
-                     </svg>
-                     <span class="flex-1 ml-3 whitespace-nowrap"></span>
-                     <span class="inline-flex items-center justify-center px-2 ml-3 text-sm font-medium text-gray-800 bg-gray-100 rounded-full dark:bg-gray-700 dark:text-gray-300">Pro</span>
-                  </a>
-               </li>
-            </ul>
-         </div>
-      </div>
-      
-      <div 
-         class="col-span-3 mb-4"
-         >
+   <div class="container p-5">
+         <vue-date-picker class="w-6/12" v-model="date" range month-picker></vue-date-picker>
+         <button
+         @click="getTransactions"
+         >Load</button>
            <transactions-table 
            ref="TransactionsTable"
            :headers = "main_table_headers"
@@ -107,7 +71,6 @@
            @submit-transactions="putTransactions"
            @load-transactions="getTransactions"
            ></transactions-table>
-      </div>
       <v-overlay v-model="overlay"></v-overlay>
       <snack-bar
       ref="errorSnackbar"

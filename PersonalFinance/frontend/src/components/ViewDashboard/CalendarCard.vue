@@ -3,7 +3,7 @@
     <VueDatePicker
       v-model="date"
       @text-submit="sendUpdateDate"
-      :inline="{ input: true }" text-input range month-picker
+      :inline="{ input: true }" range month-picker
     >
     </VueDatePicker>
   </div>

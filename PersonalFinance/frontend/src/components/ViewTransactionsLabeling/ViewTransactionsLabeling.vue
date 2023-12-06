@@ -4,6 +4,7 @@ import Cookies from 'js-cookie';
 import '@vuepic/vue-datepicker/dist/main.css';
 const baseUrl = process.env.VUE_APP_BASE_URL;
 
+import VueDatePicker from '@vuepic/vue-datepicker';
 import TransactionsTable from './TransactionsTable.vue';
 import TableHeaderCard from '../TableHeaderCard.vue';
 import YesNoModal from '../YesNoModal.vue';
@@ -25,17 +26,17 @@ export default {
       line_chart_data:[],
       pie_chart_data:[],
       main_table_headers:[
-          {title:'Date', align:'start', sortable:true, key:'date'},
+          {title:'Date', align:'start', sortable:true, value:'date'},
           {
             title:'Transaction',
             align:'start',
             sortable:false,
-            key:'info'
+            value:'info'
           },
-          {title:'Entry', align:'start', sortable:true, key:'entry'},
-          {title:'Amount', align:'start', sortable:true, key:'amount'},
-          {title:'Detail', align:'start', sortable:false, key:'details'},
-          {title:'Category', align:'start', sortable:true, key:"category"},
+          {title:'Entry', align:'start', sortable:true, value:'entry'},
+          {title:'Amount', align:'start', sortable:true, value:'amount'},
+          {title:'Detail', align:'start', sortable:false, value:'details'},
+          {title:'Category', align:'start', sortable:true, value:"account_type"},
         ]
     }
   },
@@ -49,7 +50,8 @@ export default {
     LineChart,
     HighlightCard,
     BigLineChart,
-    CalendarCard
+    CalendarCard,
+    VueDatePicker
   },
   methods:{
     getTransactions(startPeriod = null, endPeriod = null){

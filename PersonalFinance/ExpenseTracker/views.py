@@ -156,7 +156,7 @@ class CRUDBankstatementAPI(View):
             Q(user=user),
             Q(month__gte=start_period.month, year=start_period.year) &
             Q(month__lte=end_period.month, year=end_period.year)
-        )
+        ).order_by('month', 'year')
 
         serialized_transactions = [transaction.serialize() for transaction in transactions]
         serialized_bs = [bs.serialize() for bs in balance_summaries]

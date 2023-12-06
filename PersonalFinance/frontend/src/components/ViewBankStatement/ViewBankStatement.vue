@@ -1,8 +1,9 @@
 <template>
+  <div>
     <PDFPreviewPanel :pdf_url="file_url"></PDFPreviewPanel>
     <div class="flex-column">
         <label class="block mb-2 text-sm font-medium text-gray-900 dark:text-white" for="user_avatar">Upload file</label>
-        <input @change="updateFile" name ="uploaded_file" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" aria-describedby="user_avatar_help" id="user_avatar" type="file">
+        <input @change="updateFile" name="uploaded_file" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 dark:text-gray-400 focus:outline-none dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400" aria-describedby="user_avatar_help" id="user_avatar" type="file">
         <v-overlay v-model="overlay">
         </v-overlay>
         <label for="bank_code" class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Select Bank</label>
@@ -14,6 +15,7 @@
         <button @click="submitForm" type="submit" class="text-white mt-2 bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800">Extract Transactions</button>    
     </div>
     <SnackBar ref="errorSnackBar"/>
+  </div>
   </template>
 
 <script>
